@@ -1,0 +1,11 @@
+target/
+.git/
+.idea/
+*.iml
+*.log
+relay-storage/
+.DS_Store
+*.md
+Dockerfile
+render.yaml
+.env

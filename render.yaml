@@ -1,0 +1,25 @@
+services:
+   - type: web
+     name: p2p-relay-server
+     runtime: java
+     buildCommand: mvn clean package -DskipTests
+     startCommand: java -cp target/classes:target/P2PShareFile-1.0-SNAPSHOT.jar org.example.p2psharefile.relay.StandaloneRelayServer
+     envVars:
+        - key: PORT
+          value: 10000
+        - key: STORAGE_DIR
+          value: /tmp/relay-storage
+        - key: FILE_EXPIRY_HOURS
+          value: 24
+        - key: MAX_FILE_SIZE_MB
+          value: 100
+        - key: ENABLE_CORS
+          value: true
+        - key: JAVA_TOOL_OPTIONS
+          value: -Xmx512m -Xms256m
+     plan: free
+     healthCheckPath: /api/relay/status/health
+     disk:
+        name: relay-storage
+        mountPath: /tmp/relay-storage
+        sizeGB: 1

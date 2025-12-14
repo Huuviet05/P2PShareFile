@@ -1,0 +1,227 @@
+/* ===== Modern Tab Styling ===== */
+
+.tab-pane {
+	-fx-background-color: transparent;
+	-fx-tab-min-height: 50px;
+}
+
+.tab-pane .tab-header-area {
+	-fx-background-color: white;
+	-fx-padding: 0;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 8, 0, 0, 2);
+}
+
+.tab-pane .tab-header-area .tab-header-background {
+	-fx-background-color: white;
+}
+
+.tab-pane .headers-region {
+	-fx-background-color: white;
+}
+
+.tab-pane .tab {
+	-fx-background-color: white;
+	-fx-background-radius: 0;
+	-fx-border-width: 0 0 3 0;
+	-fx-border-color: transparent;
+	-fx-padding: 15 25 15 25;
+	-fx-cursor: hand;
+}
+
+.tab-pane .tab:hover {
+	-fx-background-color: linear-gradient(to bottom, white 0%, #f8f9fa 100%);
+}
+
+.tab-pane .tab:selected {
+	-fx-background-color: white;
+	-fx-border-color: transparent transparent #667eea transparent;
+	-fx-border-width: 0 0 3 0;
+}
+
+.tab-pane .tab .tab-label {
+	-fx-text-fill: #636e72;
+	-fx-font-size: 14px;
+	-fx-font-weight: bold;
+	-fx-padding: 0;
+}
+
+.tab-pane .tab:selected .tab-label {
+	-fx-text-fill: #667eea;
+}
+
+.tab-pane .tab:hover .tab-label {
+	-fx-text-fill: #2d3436;
+}
+
+/* Remove focus border */
+.tab-pane:focused .tab:selected {
+	-fx-focus-color: transparent;
+	-fx-faint-focus-color: transparent;
+}
+
+.tab-pane .tab-content-area {
+	-fx-background-color: #f0f4f8;
+	-fx-padding: 0;
+}
+
+/* ===== ListView Styling ===== */
+
+.list-view {
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+	-fx-background-insets: 0;
+	-fx-padding: 0;
+}
+
+.list-view .list-cell {
+	-fx-background-color: white;
+	-fx-border-color: #e9ecef;
+	-fx-border-width: 0 0 1 0;
+	-fx-padding: 12 15;
+	-fx-text-fill: #2d3436;
+}
+
+.list-view .list-cell:hover {
+	-fx-background-color: #f8f9fa;
+}
+
+.list-view .list-cell:selected {
+	-fx-background-color: linear-gradient(to right, #e8eaf6, #f3e5f5);
+	-fx-text-fill: #667eea;
+	-fx-font-weight: bold;
+}
+
+.list-view .list-cell:empty {
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+}
+
+/* ===== ScrollBar Styling ===== */
+
+.scroll-pane {
+	-fx-background-color: transparent;
+	-fx-border-color: transparent;
+	-fx-padding: 0;
+}
+
+.scroll-pane > .viewport {
+	-fx-background-color: transparent;
+}
+
+.scroll-pane .corner {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar {
+	-fx-background-color: transparent;
+	-fx-pref-width: 10;
+	-fx-padding: 0 2 0 2;
+}
+
+.scroll-bar:vertical {
+	-fx-pref-width: 10;
+}
+
+.scroll-bar:horizontal {
+	-fx-pref-height: 10;
+}
+
+.scroll-bar .thumb {
+	-fx-background-color: rgba(102, 126, 234, 0.4);
+	-fx-background-radius: 5;
+	-fx-background-insets: 0;
+	-fx-border-radius: 5;
+}
+
+.scroll-bar .thumb:hover {
+	-fx-background-color: rgba(102, 126, 234, 0.7);
+}
+
+.scroll-bar .thumb:pressed {
+	-fx-background-color: rgba(102, 126, 234, 0.9);
+}
+
+.scroll-bar .track {
+	-fx-background-color: rgba(0, 0, 0, 0.05);
+	-fx-background-radius: 5;
+	-fx-border-radius: 5;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+	-fx-background-color: transparent;
+	-fx-padding: 0;
+	-fx-pref-height: 0;
+	-fx-pref-width: 0;
+	-fx-max-height: 0;
+	-fx-max-width: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+	-fx-shape: '';
+	-fx-padding: 0;
+}
+
+/* ===== TextField Styling ===== */
+
+.text-field {
+	-fx-background-color: #f8f9fa;
+	-fx-background-radius: 10;
+	-fx-border-color: #e9ecef;
+	-fx-border-radius: 10;
+	-fx-border-width: 1;
+	-fx-padding: 12;
+	-fx-font-size: 14;
+	-fx-text-fill: #2d3436;
+}
+
+.text-field:focused {
+	-fx-border-color: #667eea;
+	-fx-border-width: 2;
+	-fx-background-color: white;
+}
+
+/* ===== Button Hover Effects ===== */
+
+.button {
+	-fx-cursor: hand;
+	-fx-transition: all 0.3s ease;
+}
+
+.button:hover {
+	-fx-scale-y: 1.05;
+	-fx-scale-x: 1.05;
+}
+
+.button:pressed {
+	-fx-scale-y: 0.98;
+	-fx-scale-x: 0.98;
+}
+
+/* ===== TextArea Styling ===== */
+
+.text-area {
+	-fx-background-color: #2d3436;
+	-fx-text-fill: #dfe6e9;
+	-fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.text-area .content {
+	-fx-background-color: #2d3436;
+}
+
+.text-area .scroll-pane {
+	-fx-background-color: #2d3436;
+}
+
+.text-area .scroll-pane .viewport {
+	-fx-background-color: #2d3436;
+}
+
+/* ===== Separator Styling ===== */
+
+.separator .line {
+	-fx-border-color: #e9ecef;
+	-fx-border-width: 1 0 0 0;
+}

@@ -1,0 +1,540 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.effect.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.p2psharefile.controller.MainController"
+            prefHeight="800.0" prefWidth="1000.0" minHeight="600.0"
+            style="-fx-background-color: #f0f4f8;">
+    
+    <!-- Top: Modern Header with Gradient -->
+    <top>
+        <VBox spacing="0">
+            <!-- Main Header Bar -->
+            <HBox alignment="CENTER_LEFT" spacing="20" 
+                  style="-fx-background-color: linear-gradient(to right, #667eea 0%, #764ba2 100%); 
+                         -fx-padding: 20 30; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 2);">
+                
+                <!-- App Title Section -->
+                <VBox spacing="5">
+                    <HBox spacing="15" alignment="CENTER_LEFT">
+                        <Label text="🚀" style="-fx-font-size: 32;"/>
+                        <Label text="P2P Share File" 
+                               style="-fx-text-fill: white; -fx-font-size: 28; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 1);"/>
+                        <Region prefWidth="20"/>
+                        <Label fx:id="peerNameLabel" text="" 
+                               style="-fx-text-fill: #FFD700; -fx-font-size: 22; -fx-font-weight: bold; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.5), 3, 0, 0, 1);"/>
+                    </HBox>
+                </VBox>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+                
+                <!-- Status Section -->
+                <VBox spacing="5" alignment="CENTER_RIGHT">
+                    <HBox spacing="10" alignment="CENTER_RIGHT">
+                        <Label text="●" fx:id="statusDot" style="-fx-text-fill: #ff4757; -fx-font-size: 20;"/>
+                        <Label fx:id="statusLabel" text="Offline" 
+                               style="-fx-text-fill: white; -fx-font-size: 16; -fx-font-weight: bold;"/>
+                    </HBox>
+                    <HBox spacing="8" alignment="CENTER_RIGHT" 
+                          style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 15; -fx-padding: 5 15;">
+                        <Label text="👥" style="-fx-font-size: 16;"/>
+                        <Label fx:id="peerCountLabel" text="0 Peers" 
+                               style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                    </HBox>
+                </VBox>
+            </HBox>
+            
+            <!-- Quick Stats Bar -->
+            <HBox alignment="CENTER" spacing="40" 
+                  style="-fx-background-color: linear-gradient(to right, #764ba2 0%, #667eea 100%); 
+                         -fx-padding: 10 30;">
+                
+                <HBox spacing="10" alignment="CENTER" 
+                      style="-fx-background-color: rgba(255,255,255,0.15); -fx-background-radius: 10; -fx-padding: 8 20;">
+                    <Label text="📁" style="-fx-font-size: 18;"/>
+                    <Label fx:id="sharedFileCountLabel" text="0 Files" 
+                           style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13;"/>
+                </HBox>
+                
+            </HBox>
+        </VBox>
+    </top>
+    
+    <!-- Center: Modern TabPane -->
+    <center>
+        <TabPane tabClosingPolicy="UNAVAILABLE" style="-fx-background-color: transparent;">
+            
+            <!-- Tab 1: Connection - Modern Design -->
+            <Tab text="  🔌  Connect  ">
+                <ScrollPane fitToWidth="true" fitToHeight="true" 
+                           style="-fx-background-color: transparent; -fx-background: transparent;">
+                    <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f0f4f8;">
+                    
+                    <!-- Connection Card -->
+                    <VBox spacing="15" 
+                          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 25; 
+                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="🎯" style="-fx-font-size: 24;"/>
+                            <Label text="Thông tin kết nối" 
+                                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                        </HBox>
+                        
+                        <Separator/>
+                        
+                        <VBox spacing="15">
+                            <!-- Display Name Input -->
+                            <VBox spacing="8">
+                                <Label text="Tên hiển thị của bạn" 
+                                       style="-fx-font-weight: bold; -fx-text-fill: #636e72;"/>
+                                <TextField fx:id="displayNameField" 
+                                          promptText="Nhập tên của bạn..." 
+                                          style="-fx-background-color: #f8f9fa; -fx-background-radius: 10; 
+                                                 -fx-border-color: #e9ecef; -fx-border-radius: 10; 
+                                                 -fx-padding: 12; -fx-font-size: 14;"/>
+                            </VBox>
+                            
+                            <!-- Port Display -->
+                            <VBox spacing="8">
+                                <Label text="Port TCP (Tự động)" 
+                                       style="-fx-font-weight: bold; -fx-text-fill: #636e72;"/>
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <TextField fx:id="portField" 
+                                              text="AUTO" 
+                                              editable="false" 
+                                              maxWidth="150"
+                                              style="-fx-background-color: #e9ecef; -fx-background-radius: 10; 
+                                                     -fx-border-color: #dee2e6; -fx-border-radius: 10; 
+                                                     -fx-padding: 12; -fx-font-size: 14; -fx-font-weight: bold;"/>
+                                    <Label text="Port sẽ được chọn tự động khi kết nối" 
+                                           style="-fx-text-fill: #95a5a6; -fx-font-size: 12;"/>
+                                </HBox>
+                            </VBox>
+                            
+                            <!-- Action Buttons -->
+                            <HBox spacing="15" style="-fx-padding: 10 0 0 0;">
+                                <Button fx:id="startButton" 
+                                       text="🚀 Bắt đầu kết nối" 
+                                       onAction="#handleStart"
+                                       style="-fx-background-color: linear-gradient(to right, #00b894, #00cec9); 
+                                              -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                              -fx-padding: 12 30; -fx-background-radius: 10; -fx-cursor: hand;
+                                              -fx-effect: dropshadow(gaussian, rgba(0,184,148,0.4), 10, 0, 0, 3);"/>
+                                              
+                                <Button fx:id="stopButton" 
+                                       text="🛑 Ngắt kết nối" 
+                                       onAction="#handleStop"
+                                       style="-fx-background-color: linear-gradient(to right, #ff7675, #d63031); 
+                                              -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                              -fx-padding: 12 30; -fx-background-radius: 10; -fx-cursor: hand;
+                                              -fx-effect: dropshadow(gaussian, rgba(255,118,117,0.4), 10, 0, 0, 3);"/>
+                            </HBox>
+                        </VBox>
+                    </VBox>
+                    
+                    <!-- Peers List Card -->
+                    <VBox spacing="15" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 25; 
+                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="👥" style="-fx-font-size: 24;"/>
+                            <Label text="Peers đang online" 
+                                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="Làm mới mỗi 5 giây" 
+                                   style="-fx-text-fill: #95a5a6; -fx-font-size: 12;"/>
+                        </HBox>
+                        
+                        <Separator/>
+                        
+                        <ListView fx:id="peerListView" prefHeight="250" minHeight="200"
+                                 style="-fx-background-color: #f8f9fa; -fx-background-radius: 10; 
+                                        -fx-border-color: transparent; -fx-padding: 5;"/>
+                    </VBox>
+                    
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+            
+            <!-- Tab 2: Share Files - Modern Design -->
+            <Tab text="  📁  My Files  ">
+                <ScrollPane fitToWidth="true" fitToHeight="true" 
+                           style="-fx-background-color: transparent; -fx-background: transparent;">
+                <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f0f4f8;">
+                    
+                    <!-- Add Files Card -->
+                    <VBox spacing="15"
+                          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 25; 
+                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="➕" style="-fx-font-size: 24;"/>
+                            <Label text="Thêm file để chia sẻ" 
+                                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                        </HBox>
+                        
+                        <Separator/>
+                        
+                        <HBox spacing="15">
+                            <Button fx:id="addFileButton" 
+                                   text="📄 Thêm File" 
+                                   onAction="#handleAddFile"
+                                   style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2); 
+                                          -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                          -fx-padding: 12 25; -fx-background-radius: 10; -fx-cursor: hand;
+                                          -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 10, 0, 0, 3);"/>
+                                          
+                            <Button fx:id="addDirectoryButton" 
+                                   text="📂 Thêm Thư mục" 
+                                   onAction="#handleAddDirectory"
+                                   style="-fx-background-color: linear-gradient(to right, #f093fb, #f5576c); 
+                                          -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                          -fx-padding: 12 25; -fx-background-radius: 10; -fx-cursor: hand;
+                                          -fx-effect: dropshadow(gaussian, rgba(240,147,251,0.4), 10, 0, 0, 3);"/>
+                        </HBox>
+                    </VBox>
+                    
+                    <!-- Shared Files List Card -->
+                    <VBox spacing="15" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 25; 
+                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="📋" style="-fx-font-size: 24;"/>
+                            <Label text="File đang chia sẻ" 
+                                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                        </HBox>
+                        
+                        <Separator/>
+                        
+                        <ListView fx:id="sharedFilesListView" prefHeight="250" minHeight="200"
+                                 style="-fx-background-color: #f8f9fa; -fx-background-radius: 10; 
+                                        -fx-border-color: transparent; -fx-padding: 5;"/>
+                    </VBox>
+                    
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+            
+            <!-- Tab 3: Search & Download - Modern Design -->
+            <Tab text="  🔍  Discover  ">
+                <ScrollPane fitToWidth="true" fitToHeight="true" 
+                           style="-fx-background-color: transparent; -fx-background: transparent;">
+                <VBox spacing="20" style="-fx-padding: 25; -fx-background-color: #f0f4f8;">
+                    
+                    <!-- Search Card -->
+                    <VBox spacing="15"
+                          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 25; 
+                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="🔎" style="-fx-font-size: 24;"/>
+                            <Label text="Tìm kiếm file trong mạng P2P" 
+                                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                        </HBox>
+                        
+                        <Separator/>
+                        
+                        <HBox spacing="15" alignment="CENTER">
+                            <TextField fx:id="searchField" 
+                                      promptText="Nhập tên file cần tìm..." 
+                                      HBox.hgrow="ALWAYS"
+                                      style="-fx-background-color: #f8f9fa; -fx-background-radius: 10; 
+                                             -fx-border-color: #e9ecef; -fx-border-radius: 10; 
+                                             -fx-padding: 12; -fx-font-size: 14;"/>
+                            <Button fx:id="searchButton" 
+                                   text="🔍 Tìm kiếm" 
+                                   onAction="#handleSearch"
+                                   style="-fx-background-color: linear-gradient(to right, #4facfe, #00f2fe); 
+                                          -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                          -fx-padding: 12 30; -fx-background-radius: 10; -fx-cursor: hand;
+                                          -fx-effect: dropshadow(gaussian, rgba(79,172,254,0.4), 10, 0, 0, 3);"/>
+                        </HBox>
+                    </VBox>
+                    
+                    <!-- Search Results Card -->
+                    <VBox spacing="15" VBox.vgrow="ALWAYS"
+                          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 25; 
+                                 -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 15, 0, 0, 5);">
+                        
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <Label text="📦" style="-fx-font-size: 24;"/>
+                            <Label text="Kết quả tìm kiếm" 
+                                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="previewButton" 
+                                   text="👁 Preview"
+                                   onAction="#handlePreview"
+                                   style="-fx-background-color: linear-gradient(to right, #a29bfe, #6c5ce7); 
+                                          -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                          -fx-padding: 10 25; -fx-background-radius: 10; -fx-cursor: hand;
+                                          -fx-effect: dropshadow(gaussian, rgba(108,92,231,0.4), 10, 0, 0, 3);">
+                                <tooltip>
+                                    <Tooltip text="Xem trước nội dung file (đã được tạo sẵn từ file gốc)&#10;Không cần tải về để xem preview" 
+                                            showDelay="500ms"/>
+                                </tooltip>
+                            </Button>
+                            <Button fx:id="downloadButton" 
+                                   text="⬇ Download"
+                                   onAction="#handleDownload"
+                                   style="-fx-background-color: linear-gradient(to right, #00b894, #00cec9); 
+                                          -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14; 
+                                          -fx-padding: 10 25; -fx-background-radius: 10; -fx-cursor: hand;
+                                          -fx-effect: dropshadow(gaussian, rgba(0,184,148,0.4), 10, 0, 0, 3);">
+                                <tooltip>
+                                    <Tooltip text="Tải file về máy (mã hóa AES-256 khi truyền, tự động giải mã khi lưu)" 
+                                            showDelay="500ms"/>
+                                </tooltip>
+                            </Button>
+                        </HBox>
+                        
+                        <Separator/>
+                        
+                        <ListView fx:id="searchResultsListView" prefHeight="250" minHeight="200"
+                                 style="-fx-background-color: #f8f9fa; -fx-background-radius: 10; 
+                                        -fx-border-color: transparent; -fx-padding: 5;"/>
+                    </VBox>
+                    
+                    </VBox>
+                </ScrollPane>
+            </Tab>
+            
+            <!-- Tab 4: Share Code - Horizontal Layout -->
+            <!-- Tab 4: Quick Share - Clean 2-Color Design with ScrollPane -->
+            <Tab text="  🔑  Quick Share  ">
+                <ScrollPane fitToWidth="true" style="-fx-background-color: #f0f4f8; -fx-background: #f0f4f8;">
+                    <HBox spacing="15" style="-fx-padding: 20; -fx-background-color: #f0f4f8;">
+
+                        <!-- ========== LEFT: SEND Section ========== -->
+                        <VBox spacing="12" HBox.hgrow="ALWAYS" prefWidth="450" maxWidth="500" minWidth="400"
+                              style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 18;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0, 0, 2);">
+
+                            <!-- Header -->
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="📤" style="-fx-font-size: 22;"/>
+                                <VBox spacing="1">
+                                    <Label text="GỬI FILE"
+                                           style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                                    <Label text="Tạo mã PIN để chia sẻ"
+                                           style="-fx-font-size: 10; -fx-text-fill: #636e72;"/>
+                                </VBox>
+                            </HBox>
+
+                            <Separator/>
+
+                            <!-- Info Box - Chỉ dùng màu xanh lá nhạt -->
+                            <HBox spacing="8" alignment="CENTER_LEFT"
+                                  style="-fx-background-color: #e8f5e9; -fx-background-radius: 8; -fx-padding: 10;">
+                                <Label text="💡" style="-fx-font-size: 14;"/>
+                                <Label text="Chọn file → Nhận mã PIN → Chia sẻ (10 phút)"
+                                       style="-fx-font-size: 10; -fx-text-fill: #2e7d32; -fx-wrap-text: true;"
+                                       wrapText="true" HBox.hgrow="ALWAYS"/>
+                            </HBox>
+
+                            <!-- File Selection -->
+                            <VBox spacing="8">
+                                <Label text="📁  File để chia sẻ"
+                                       style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+
+                                <ListView fx:id="pinShareFileListView"
+                                          prefHeight="50" maxHeight="50"
+                                          style="-fx-background-color: #f8f9fa; -fx-background-radius: 6;
+                                    -fx-border-color: #dee2e6; -fx-border-width: 1; -fx-border-radius: 6;"/>
+
+                                <Button text="➕  Chọn File"
+                                        onAction="#handleSelectFileForPIN"
+                                        maxWidth="Infinity"
+                                        style="-fx-background-color: #667eea;
+                                  -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 11;
+                                  -fx-padding: 10 0; -fx-background-radius: 6; -fx-cursor: hand;"/>
+                            </VBox>
+
+                            <!-- PIN Display Panel - Chỉ dùng màu tím -->
+                            <VBox fx:id="pinDisplayPanel"
+                                  visible="false"
+                                  spacing="10"
+                                  style="-fx-background-color: #667eea;
+                             -fx-background-radius: 10; -fx-padding: 15;">
+
+                                <!-- PIN Header -->
+                                <HBox alignment="CENTER" spacing="6">
+                                    <Label text="✨" style="-fx-font-size: 14;"/>
+                                    <Label text="MÃ CHIA SẺ"
+                                           style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: white;"/>
+                                </HBox>
+
+                                <!-- PIN Code -->
+                                <VBox alignment="CENTER" spacing="4"
+                                      style="-fx-background-color: white; -fx-background-radius: 8; -fx-padding: 12 18;">
+                                    <Label fx:id="pinLabel"
+                                           text="123456"
+                                           style="-fx-font-size: 28px; -fx-font-weight: bold;
+                                      -fx-text-fill: #667eea; -fx-font-family: 'Courier New';
+                                      -fx-letter-spacing: 5px;"/>
+                                    <Label text="MÃ PIN"
+                                           style="-fx-font-size: 8; -fx-text-fill: #95a5a6; -fx-font-weight: bold;"/>
+                                </VBox>
+
+                                <!-- File Info -->
+                                <VBox spacing="6">
+                                    <HBox spacing="8" alignment="CENTER_LEFT"
+                                          style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 6; -fx-padding: 8 10;">
+                                        <Label text="📄" style="-fx-font-size: 12;"/>
+                                        <VBox spacing="1" HBox.hgrow="ALWAYS">
+                                            <Label text="TÊN FILE"
+                                                   style="-fx-font-size: 7; -fx-text-fill: rgba(255,255,255,0.8); -fx-font-weight: bold;"/>
+                                            <Label fx:id="pinFileNameLabel"
+                                                   text="filename.txt"
+                                                   style="-fx-font-size: 10; -fx-text-fill: white; -fx-font-weight: bold;"
+                                                   wrapText="true"/>
+                                        </VBox>
+                                    </HBox>
+
+                                    <HBox spacing="8" alignment="CENTER_LEFT"
+                                          style="-fx-background-color: rgba(255,255,255,0.2); -fx-background-radius: 6; -fx-padding: 8 10;">
+                                        <Label text="⏱️" style="-fx-font-size: 12;"/>
+                                        <VBox spacing="1" HBox.hgrow="ALWAYS">
+                                            <Label text="THỜI GIAN CÒN"
+                                                   style="-fx-font-size: 7; -fx-text-fill: rgba(255,255,255,0.8); -fx-font-weight: bold;"/>
+                                            <Label fx:id="pinExpiryLabel"
+                                                   text="10:00"
+                                                   style="-fx-font-size: 12; -fx-text-fill: #FFD700; -fx-font-weight: bold;
+                                              -fx-font-family: 'Courier New';"/>
+                                        </VBox>
+                                    </HBox>
+                                </VBox>
+
+                                <!-- Cancel Button -->
+                                <Button text="❌  Hủy Chia Sẻ"
+                                        onAction="#handleCancelPIN"
+                                        maxWidth="Infinity"
+                                        style="-fx-background-color: #ff4757;
+                                  -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 10;
+                                  -fx-padding: 9 0; -fx-background-radius: 6; -fx-cursor: hand;"/>
+
+                                <!-- Status -->
+                                <HBox alignment="CENTER" spacing="5"
+                                      style="-fx-background-color: rgba(0,0,0,0.15); -fx-padding: 5 0; -fx-background-radius: 6;">
+                                    <Label text="🔴" style="-fx-font-size: 9;"/>
+                                    <Label text="ĐANG CHIA SẺ"
+                                           style="-fx-font-size: 8; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                                </HBox>
+                            </VBox>
+
+                        </VBox>
+
+                        <!-- ========== RIGHT: RECEIVE Section ========== -->
+                        <VBox spacing="12" HBox.hgrow="ALWAYS" prefWidth="450" maxWidth="500" minWidth="400"
+                              style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 18;
+                         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 12, 0, 0, 2);">
+
+                            <!-- Header -->
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="📥" style="-fx-font-size: 22;"/>
+                                <VBox spacing="1">
+                                    <Label text="NHẬN FILE"
+                                           style="-fx-font-size: 15; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                                    <Label text="Nhập mã PIN để tải về"
+                                           style="-fx-font-size: 10; -fx-text-fill: #636e72;"/>
+                                </VBox>
+                            </HBox>
+
+                            <Separator/>
+
+                            <!-- Info Box - Chỉ dùng màu xanh dương nhạt -->
+                            <HBox spacing="8" alignment="CENTER_LEFT"
+                                  style="-fx-background-color: #e3f2fd; -fx-background-radius: 8; -fx-padding: 10;">
+                                <Label text="ℹ️" style="-fx-font-size: 14;"/>
+                                <Label text="Nhận mã từ người gửi → Nhập mã → Nhấn 'Nhận File'"
+                                       style="-fx-font-size: 10; -fx-text-fill: #1565c0; -fx-wrap-text: true;"
+                                       wrapText="true" HBox.hgrow="ALWAYS"/>
+                            </HBox>
+
+                            <!-- PIN Input Section -->
+                            <VBox spacing="12" alignment="CENTER" VBox.vgrow="ALWAYS">
+
+                                <VBox spacing="3" alignment="CENTER">
+                                    <Label text="🔢  Nhập mã PIN (6 chữ số)"
+                                           style="-fx-font-size: 11; -fx-font-weight: bold; -fx-text-fill: #2d3436;"/>
+                                </VBox>
+
+                                <!-- Input Box - Chỉ dùng màu tím nhẹ -->
+                                <VBox spacing="8" alignment="CENTER"
+                                      style="-fx-background-color: #e8eaf6;
+                                 -fx-background-radius: 10; -fx-padding: 18 15;
+                                 -fx-border-color: #c5cae9; -fx-border-width: 1; -fx-border-radius: 10;">
+
+                                    <TextField fx:id="pinInputField"
+                                               promptText="000000"
+                                               maxWidth="200"
+                                               style="-fx-font-size: 26px; -fx-font-family: 'Courier New';
+                                         -fx-alignment: center; -fx-font-weight: bold;
+                                         -fx-background-color: white; -fx-background-radius: 6;
+                                         -fx-border-color: #9fa8da; -fx-border-width: 2; -fx-border-radius: 6;
+                                         -fx-padding: 10 12; -fx-letter-spacing: 7px; -fx-text-fill: #2d3436;
+                                         -fx-prompt-text-fill: #bdbdbd;"/>
+
+                                    <Label text="Mã có hiệu lực 10 phút"
+                                           style="-fx-font-size: 9; -fx-text-fill: #5c6bc0;"/>
+                                </VBox>
+
+                                <!-- Receive Button - Màu tím -->
+                                <Button fx:id="receiveButton"
+                                        text="📥  Nhận File Ngay"
+                                        onAction="#handleReceiveByPIN"
+                                        maxWidth="200"
+                                        style="-fx-background-color: #667eea;
+                                  -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12;
+                                  -fx-padding: 11 25; -fx-background-radius: 6; -fx-cursor: hand;"/>
+
+                                <Label text="File sẽ được tải về thư mục Downloads"
+                                       style="-fx-font-size: 9; -fx-text-fill: #95a5a6;"
+                                       wrapText="true" alignment="CENTER" textAlignment="CENTER"/>
+                            </VBox>
+
+                        </VBox>
+
+                    </HBox>
+                </ScrollPane>
+            </Tab>
+            
+        </TabPane>
+    </center>
+    
+    <!-- Bottom: Modern Log Panel -->
+    <bottom>
+        <VBox style="-fx-background-color: white; -fx-padding: 0; 
+                     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, -3);">
+            
+            <!-- Log Header -->
+            <HBox alignment="CENTER_LEFT" spacing="10" 
+                  style="-fx-background-color: linear-gradient(to right, #2d3436, #636e72); -fx-padding: 10 20;">
+                <Label text="📋" style="-fx-font-size: 16;"/>
+                <Label text="Activity Log" 
+                       style="-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Real-time updates" 
+                       style="-fx-text-fill: rgba(255,255,255,0.7); -fx-font-size: 11;"/>
+            </HBox>
+            
+            <!-- Log Content -->
+            <TextArea fx:id="logTextArea" 
+                     editable="false" 
+                     prefHeight="140" 
+                     wrapText="true"
+                     style="-fx-background-color: #2d3436; -fx-text-fill: #dfe6e9; 
+                            -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace; 
+                            -fx-font-size: 12; -fx-padding: 10;
+                            -fx-control-inner-background: #2d3436;"/>
+        </VBox>
+    </bottom>
+    
+</BorderPane>

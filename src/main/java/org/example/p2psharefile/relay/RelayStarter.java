@@ -1,0 +1,192 @@
+package org.example.p2psharefile.relay;
+
+import org.example.p2psharefile.network.RelayConfig;
+import org.example.p2psharefile.service.P2PService;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.logging.Logger;
+
+/**
+ * RelayStarter - Tự động khởi động Relay Server và enable Relay Client
+ * 
+ * Chức năng:
+ * - Khởi động RelayServer trong background thread
+ * - Enable relay trong P2PService với cấu hình development
+ * - Tự động tạo thư mục lưu trữ relay
+ * 
+ * Sử dụng:
+ * <pre>
+ * P2PService p2pService = new P2PService("MyPeer", 0);
+ * RelayStarter.startRelayInBackground(p2pService);
+ * p2pService.start();
+ * </pre>
+ */
+public class RelayStarter {
+    
+    private static final Logger LOGGER = Logger.getLogger(RelayStarter.class.getName());
+    private static final int DEFAULT_RELAY_PORT = 8080;
+    private static final String DEFAULT_STORAGE_DIR = "relay-storage";
+    private static final long DEFAULT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 giờ
+    
+    // Environment variable để config relay server URL
+    // Ví dụ: set RELAY_SERVER_URL=http://192.168.1.100:8080
+    private static final String ENV_RELAY_SERVER_URL = "RELAY_SERVER_URL";
+    private static final String ENV_START_RELAY_SERVER = "START_RELAY_SERVER"; // true/false
+    
+    private static RelayServer relayServer;
+    private static ExecutorService relayExecutor;
+    
+    /**
+     * Khởi động Relay Server và enable Relay Client
+     * 
+     * @param p2pService P2P Service để enable relay
+     * @return true nếu thành công
+     */
+    public static boolean startRelayInBackground(P2PService p2pService) {
+        return startRelayInBackground(p2pService, DEFAULT_RELAY_PORT, DEFAULT_STORAGE_DIR, DEFAULT_EXPIRY_MS);
+    }
+    
+    /**
+     * Khởi động Relay Server và enable Relay Client với cấu hình tùy chỉnh
+     * 
+     * @param p2pService P2P Service để enable relay
+     * @param port Port cho relay server
+     * @param storageDir Thư mục lưu file relay
+     * @param expiryMs Thời gian hết hạn file (milliseconds)
+     * @return true nếu thành công
+     */
+    public static boolean startRelayInBackground(P2PService p2pService, int port, String storageDir, long expiryMs) {
+        try {
+            System.out.println("\n🌐 ========== KHỞI ĐỘNG RELAY SYSTEM ==========");
+            
+            // Kiểm tra environment variable
+            String relayServerUrl = System.getenv(ENV_RELAY_SERVER_URL);
+            String startServerEnv = System.getenv(ENV_START_RELAY_SERVER);
+            boolean shouldStartServer = (startServerEnv == null || "true".equalsIgnoreCase(startServerEnv));
+            
+            // Nếu có RELAY_SERVER_URL từ environment, dùng relay server đó (không start local server)
+            if (relayServerUrl != null && !relayServerUrl.isEmpty()) {
+                System.out.println("🌍 Sử dụng relay server từ environment: " + relayServerUrl);
+                System.out.println("   → Không khởi động local relay server");
+                
+                RelayConfig config = RelayConfig.forDevelopment();
+                config.setServerUrl(relayServerUrl);
+                config.setPreferP2P(true);
+                config.setP2pTimeoutMs(10000);
+                config.setForceRelay(false);
+                
+                p2pService.enableRelay(config);
+                
+                System.out.println("✅ RelayClient đã được kích hoạt (remote server)");
+                System.out.println("   • Server URL: " + config.getServerUrl());
+                System.out.println("   • Ưu tiên P2P: " + config.isPreferP2P());
+                System.out.println("==================================================\n");
+                
+                return true;
+            }
+            
+            // Không có env variable -> Start local relay server (mặc định)
+            if (!shouldStartServer) {
+                System.out.println("⚠ Relay server bị disable (START_RELAY_SERVER=false)");
+                return false;
+            }
+            
+            // Tạo thư mục lưu trữ nếu chưa có
+            Path storagePath = Paths.get(storageDir);
+            if (!Files.exists(storagePath)) {
+                Files.createDirectories(storagePath);
+                LOGGER.info("📁 Đã tạo thư mục relay: " + storagePath.toAbsolutePath());
+            }
+            
+            // Khởi động Relay Server trong background
+            System.out.println("🚀 Đang khởi động RelayServer LOCAL...");
+            System.out.println("   • Port: " + port);
+            System.out.println("   • Thư mục lưu trữ: " + storagePath.toAbsolutePath());
+            System.out.println("   • Thời gian hết hạn: " + (expiryMs / 1000 / 60 / 60) + " giờ");
+            
+            relayServer = new RelayServer(port, storagePath, expiryMs);
+            relayExecutor = Executors.newSingleThreadExecutor(r -> {
+                Thread thread = new Thread(r, "RelayServer-Thread");
+                thread.setDaemon(true); // Daemon thread để tự động dừng khi app exit
+                return thread;
+            });
+            
+            relayExecutor.submit(() -> {
+                try {
+                    relayServer.start();
+                } catch (Exception e) {
+                    LOGGER.severe("❌ Lỗi khởi động RelayServer: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            
+            // Đợi một chút để server khởi động
+            Thread.sleep(500);
+            
+            System.out.println("✅ RelayServer đã khởi động trên port " + port);
+            
+            // Enable Relay Client trong P2PService
+            System.out.println("\n🔧 Cấu hình RelayClient...");
+            RelayConfig config = RelayConfig.forDevelopment();
+            // Sử dụng localhost với port vừa khởi động
+            config.setServerUrl("http://localhost:" + port);
+            config.setPreferP2P(true);
+            config.setP2pTimeoutMs(10000); // 10 giây timeout cho P2P
+            config.setForceRelay(false);
+            
+            p2pService.enableRelay(config);
+            
+            System.out.println("✅ RelayClient đã được kích hoạt");
+            System.out.println("   • Server URL: " + config.getServerUrl());
+            System.out.println("   • Ưu tiên P2P: " + config.isPreferP2P());
+            System.out.println("   • P2P Timeout: " + config.getP2pTimeoutMs() + "ms");
+            System.out.println("   • Bắt buộc Relay: " + config.isForceRelay());
+            
+            System.out.println("\n📡 Relay System sẵn sàng!");
+            System.out.println("   → P2P LAN: Ưu tiên (nhanh)");
+            System.out.println("   → Relay Internet: Fallback tự động");
+            System.out.println("==================================================\n");
+            
+            return true;
+            
+        } catch (Exception e) {
+            LOGGER.severe("❌ Lỗi khởi động Relay System: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * Dừng Relay Server
+     */
+    public static void stopRelay() {
+        if (relayServer != null) {
+            System.out.println("🛑 Đang dừng RelayServer...");
+            relayServer.stop();
+            relayServer = null;
+        }
+        if (relayExecutor != null) {
+            relayExecutor.shutdown();
+            relayExecutor = null;
+        }
+        System.out.println("✅ RelayServer đã dừng");
+    }
+    
+    /**
+     * Kiểm tra relay có đang chạy không
+     */
+    public static boolean isRelayRunning() {
+        return relayServer != null;
+    }
+    
+    /**
+     * Lấy relay server instance (để test)
+     */
+    public static RelayServer getRelayServer() {
+        return relayServer;
+    }
+}
