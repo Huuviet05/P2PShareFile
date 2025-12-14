@@ -384,24 +384,24 @@ public class FileSearchService {
                     return;
                 }
                 
-                // Tạo RelayUploadRequest
+                // Tạo RelayUploadRequest (senderId, senderName, fileName, fileSize, fileHash)
                 org.example.p2psharefile.model.RelayUploadRequest request = 
                     new org.example.p2psharefile.model.RelayUploadRequest(
-                        fileInfo.getFileName(),
-                        file.length(),
                         localPeer.getPeerId(),
                         localPeer.getDisplayName(),
+                        fileInfo.getFileName(),
+                        file.length(),
                         fileInfo.getChecksum()
                     );
                 
                 // Upload với progress listener
-                String uploadId = relayClient.uploadFile(file, request, new RelayClient.RelayTransferListener() {
+                relayClient.uploadFile(file, request, new RelayClient.RelayTransferListener() {
                     @Override
                     public void onProgress(org.example.p2psharefile.model.RelayTransferProgress progress) {
                         if (progress.getPercentage() % 20 == 0 || progress.getPercentage() == 100) {
                             System.out.printf("  📊 Upload progress: %.1f%% (%d/%d bytes)\n",
                                 progress.getPercentage(),
-                                progress.getCurrentBytes(),
+                                progress.getTransferredBytes(),
                                 progress.getTotalBytes());
                         }
                     }
