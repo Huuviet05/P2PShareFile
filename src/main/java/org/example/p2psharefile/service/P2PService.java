@@ -213,6 +213,12 @@ public class P2PService {
      */
     public void enableRelay(RelayConfig config) {
         fileTransferService.enableRelay(config);
+        
+        // Set RelayClient cho FileSearchService để tự động upload file khi share
+        if (fileTransferService.getRelayClient() != null) {
+            fileSearchService.setRelayClient(fileTransferService.getRelayClient());
+        }
+        
         System.out.println("✓ Relay đã được bật: " + config.getServerUrl());
         System.out.println("  • Prefer P2P: " + config.isPreferP2P());
         System.out.println("  • P2P Timeout: " + config.getP2pTimeoutMs() + "ms");

@@ -27,6 +27,8 @@ public class FileSearchService {
     private final SecurityManager securityManager;
     private final Map<String, List<FileInfo>> sharedFiles;
     private final Set<String> processedRequests;
+    
+    private RelayClient relayClient; // Để upload file lên relay server khi share
 
     private SSLServerSocket searchServer;
     private ExecutorService executorService;
@@ -360,6 +362,77 @@ public class FileSearchService {
         System.out.println("✓ [FileSearchService] Đã thêm file: " + fileInfo.getFileName() +
                 " vào thư mục: " + directory);
         System.out.println("  → Tổng số file đang chia sẻ: " + getSharedFileCount());
+        
+        // Tự động upload lên relay server nếu relay enabled
+        if (relayClient != null) {
+            uploadToRelayAsync(fileInfo);
+        }
+    }
+    
+    /**
+     * Upload file lên relay server (async)
+     */
+    private void uploadToRelayAsync(FileInfo fileInfo) {
+        // Tạo thread riêng để upload (không block UI)
+        new Thread(() -> {
+            try {
+                System.out.println("📤 Đang upload file lên relay server: " + fileInfo.getFileName());
+                
+                java.io.File file = new java.io.File(fileInfo.getFilePath());
+                if (!file.exists()) {
+                    System.err.println("❌ File không tồn tại: " + fileInfo.getFilePath());
+                    return;
+                }
+                
+                // Tạo RelayUploadRequest
+                org.example.p2psharefile.model.RelayUploadRequest request = 
+                    new org.example.p2psharefile.model.RelayUploadRequest(
+                        fileInfo.getFileName(),
+                        file.length(),
+                        localPeer.getPeerId(),
+                        localPeer.getDisplayName(),
+                        fileInfo.getChecksum()
+                    );
+                
+                // Upload với progress listener
+                String uploadId = relayClient.uploadFile(file, request, new RelayClient.RelayTransferListener() {
+                    @Override
+                    public void onProgress(org.example.p2psharefile.model.RelayTransferProgress progress) {
+                        if (progress.getPercentage() % 20 == 0 || progress.getPercentage() == 100) {
+                            System.out.printf("  📊 Upload progress: %.1f%% (%d/%d bytes)\n",
+                                progress.getPercentage(),
+                                progress.getCurrentBytes(),
+                                progress.getTotalBytes());
+                        }
+                    }
+                    
+                    @Override
+                    public void onComplete(org.example.p2psharefile.model.RelayFileInfo relayFileInfo) {
+                        System.out.println("✅ Đã upload file lên relay: " + fileInfo.getFileName());
+                        System.out.println("  → Upload ID: " + relayFileInfo.getUploadId());
+                        System.out.println("  → Download URL: " + relayFileInfo.getDownloadUrl());
+                        
+                        // Lưu RelayFileInfo vào FileInfo
+                        fileInfo.setRelayFileInfo(relayFileInfo);
+                    }
+                    
+                    @Override
+                    public void onError(Exception e) {
+                        System.err.println("❌ Lỗi upload file lên relay: " + e.getMessage());
+                    }
+                });
+                
+            } catch (Exception e) {
+                System.err.println("❌ Lỗi upload file: " + e.getMessage());
+            }
+        }, "RelayUpload-" + fileInfo.getFileName()).start();
+    }
+    
+    /**
+     * Set RelayClient (được gọi từ P2PService)
+     */
+    public void setRelayClient(RelayClient relayClient) {
+        this.relayClient = relayClient;
     }
 
     public void removeSharedFile(String directory, String fileName) {
