@@ -352,7 +352,17 @@ public class PeerDiscovery {
 
                 // Gửi heartbeat đến các peer đã biết
                 for (PeerInfo peer : new ArrayList<>(discoveredPeers.values())) {
-                    executorService.submit(() -> sendHeartbeat(peer));
+                    // KHÔNG gửi heartbeat cho peers từ relay (vì không thể P2P trực tiếp)
+                    // Relay peers được maintain bởi relay server heartbeat
+                    boolean isRelayPeer = isPublicIP(peer.getIpAddress());
+                    
+                    if (!isRelayPeer) {
+                        // Chỉ heartbeat cho LAN peers
+                        executorService.submit(() -> sendHeartbeat(peer));
+                    } else {
+                        // Relay peers: auto-refresh lastSeen để không timeout
+                        peer.updateLastSeen();
+                    }
 
                     // Kiểm tra timeout
                     if (currentTime - peer.getLastSeen() > PEER_TIMEOUT) {
@@ -445,6 +455,44 @@ public class PeerDiscovery {
 
     /**
      * Lấy base IP (3 octet đầu) từ IP address
+     */
+    private String getBaseIP(String ip) {
+        String[] parts = ip.split("\\.");
+        if (parts.length >= 3) {
+            return parts[0] + "." + parts[1] + "." + parts[2];
+        }
+        return ip;
+    }
+    
+    /**
+     * Kiểm tra xem IP có phải public IP (từ Internet) không
+     * - Private IPs: 10.x.x.x, 172.16-31.x.x, 192.168.x.x
+     * - Public IPs: Tất cả các IP khác
+     */
+    private boolean isPublicIP(String ip) {
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) {
+            return false; // IPv6 hoặc invalid
+        }
+        
+        try {
+            int first = Integer.parseInt(parts[0]);
+            int second = Integer.parseInt(parts[1]);
+            
+            // Check private IP ranges
+            if (first == 10) return false;                           // 10.0.0.0/8
+            if (first == 172 && second >= 16 && second <= 31) return false; // 172.16.0.0/12
+            if (first == 192 && second == 168) return false;         // 192.168.0.0/16
+            if (first == 127) return false;                          // Localhost
+            
+            return true; // Public IP
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Lấy base IP (3 octet đầu) từ IP address (method cũ - để tương thích)
      */
     private String getBaseIP(String ip) {
         String[] parts = ip.split("\\.");
