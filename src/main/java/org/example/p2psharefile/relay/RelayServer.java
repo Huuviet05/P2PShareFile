@@ -399,7 +399,16 @@ public class RelayServer {
                 
                 // Nếu publicIp là "auto", dùng IP của client
                 if ("auto".equals(publicIp)) {
-                    publicIp = exchange.getRemoteAddress().getAddress().getHostAddress();
+                    // Ưu tiên lấy từ X-Forwarded-For header (khi server sau proxy/load balancer)
+                    String forwardedFor = exchange.getRequestHeaders().getFirst("X-Forwarded-For");
+                    if (forwardedFor != null && !forwardedFor.isEmpty()) {
+                        // X-Forwarded-For có thể chứa nhiều IP: "client, proxy1, proxy2"
+                        // Lấy IP đầu tiên (IP của client thực)
+                        publicIp = forwardedFor.split(",")[0].trim();
+                    } else {
+                        // Fallback: Lấy từ remote address
+                        publicIp = exchange.getRemoteAddress().getAddress().getHostAddress();
+                    }
                 }
                 
                 peerRegistry.registerPeer(peerId, displayName, publicIp, port, publicKey);
