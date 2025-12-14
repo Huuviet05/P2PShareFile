@@ -16,6 +16,7 @@ public class FileInfo implements Serializable {
     private String checksum;        // MD5 checksum để kiểm tra tính toàn vẹn
     private String ownerId;         // ID của peer sở hữu file này
     private String fileHash;        // SHA-256 hash cho UltraView preview
+    private RelayFileInfo relayFileInfo; // Thông tin relay (nếu file đã upload lên relay server)
     
     public FileInfo(String fileName, long fileSize, String filePath) {
         this.fileName = fileName;
@@ -78,6 +79,14 @@ public class FileInfo implements Serializable {
     
     public void setFileHash(String fileHash) {
         this.fileHash = fileHash;
+    }
+    
+    public RelayFileInfo getRelayFileInfo() {
+        return relayFileInfo;
+    }
+    
+    public void setRelayFileInfo(RelayFileInfo relayFileInfo) {
+        this.relayFileInfo = relayFileInfo;
     }
     
     /**

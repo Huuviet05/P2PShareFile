@@ -382,8 +382,16 @@ public class FileTransferService {
                         listener.onRelayFallback("relay-" + System.currentTimeMillis());
                     }
                     
-                    // TODO: Cần có RelayFileInfo từ peer qua signaling
-                    // downloadFileViaRelay(relayFileInfo, saveDirectory, listener);
+                    // Kiểm tra xem fileInfo có relayFileInfo không
+                    if (fileInfo.getRelayFileInfo() != null) {
+                        LOGGER.info("📡 Đang download qua relay server...");
+                        downloadFileViaRelay(fileInfo.getRelayFileInfo(), saveDirectory, listener);
+                    } else {
+                        LOGGER.warning("⚠ File chưa có relay info, không thể download qua relay");
+                        if (listener != null) {
+                            listener.onError(new IOException("File not available on relay server"));
+                        }
+                    }
                     
                 } else {
                     LOGGER.severe("❌ Relay chưa được bật, không thể fallback");
