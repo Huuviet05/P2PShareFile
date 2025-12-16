@@ -492,17 +492,6 @@ public class PeerDiscovery {
     }
 
     /**
-     * Lấy base IP (3 octet đầu) từ IP address (method cũ - để tương thích)
-     */
-    private String getBaseIP(String ip) {
-        String[] parts = ip.split("\\.");
-        if (parts.length == 4) {
-            return parts[0] + "." + parts[1] + "." + parts[2];
-        }
-        return "192.168.1"; // Fallback
-    }
-
-    /**
      * Kiểm tra cùng subnet
      */
     private boolean isSameSubnet(String ip1, String ip2) {
