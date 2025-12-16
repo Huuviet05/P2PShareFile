@@ -36,6 +36,8 @@ public class PINCodeService {
     private final Map<String, ShareSession> localSessions;  // PIN do mình tạo
     private final Map<String, ShareSession> globalSessions; // PIN từ tất cả peers
     
+    private org.example.p2psharefile.network.RelayClient relayClient; // Relay client để sync PIN qua Internet
+    
     private SSLServerSocket pinServer;
     private ExecutorService executorService;
     private volatile boolean running = false;
@@ -56,6 +58,13 @@ public class PINCodeService {
         this.localSessions = new ConcurrentHashMap<>();
         this.globalSessions = new ConcurrentHashMap<>();
         this.listeners = new CopyOnWriteArrayList<>();
+    }
+    
+    /**
+     * Set RelayClient để sync PIN qua Internet
+     */
+    public void setRelayClient(org.example.p2psharefile.network.RelayClient relayClient) {
+        this.relayClient = relayClient;
     }
     
     /**
@@ -122,6 +131,11 @@ public class PINCodeService {
         
         System.out.println("✓ Đã tạo PIN: " + pin + " cho file: " + fileInfo.getFileName());
 
+        // Gửi PIN đến relay server (nếu file đã được upload lên relay)
+        if (relayClient != null && fileInfo.getRelayFileInfo() != null) {
+            sendPINToRelay(session, expiryMillis);
+        }
+        
         // Gửi PIN đến các peer khác (sử dụng PeerDiscovery để lấy danh sách peers)
         sendPINToAllPeers(session);
         
@@ -132,13 +146,70 @@ public class PINCodeService {
     }
     
     /**
-     * Tìm session bằng PIN
+     * Gửi PIN lên relay server
+     */
+    private void sendPINToRelay(ShareSession session, long expiryMillis) {
+        try {
+            org.example.p2psharefile.model.RelayFileInfo relayFileInfo = session.getFileInfo().getRelayFileInfo();
+            if (relayFileInfo == null) {
+                System.err.println("⚠ File chưa được upload lên relay, không thể tạo PIN qua relay");
+                return;
+            }
+            
+            boolean success = relayClient.createPIN(session.getPin(), relayFileInfo, expiryMillis);
+            if (success) {
+                System.out.println("✓ Đã gửi PIN lên relay server: " + session.getPin());
+            } else {
+                System.err.println("⚠ Không thể gửi PIN lên relay server");
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi gửi PIN lên relay: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Tìm session bằng PIN (cả local và relay)
      */
     public ShareSession findByPIN(String pin) {
+        // Tìm trong local/global cache trước
         ShareSession session = globalSessions.get(pin);
         if (session != null && !session.isExpired()) {
             return session;
         }
+        
+        // Nếu không tìm thấy local, thử tìm trên relay
+        if (relayClient != null) {
+            org.example.p2psharefile.model.RelayFileInfo relayFileInfo = relayClient.findPIN(pin);
+            if (relayFileInfo != null) {
+                // Tạo session từ relay info
+                FileInfo fileInfo = new FileInfo(
+                    relayFileInfo.getFileName(),
+                    relayFileInfo.getFileSize(),
+                    relayFileInfo.getDownloadUrl()
+                );
+                fileInfo.setChecksum(relayFileInfo.getFileHash());
+                fileInfo.setFileHash(relayFileInfo.getFileHash());
+                fileInfo.setRelayFileInfo(relayFileInfo);
+                
+                // Tạo PeerInfo cho sender (giả lập)
+                PeerInfo senderPeer = new PeerInfo(
+                    relayFileInfo.getSenderId() != null ? relayFileInfo.getSenderId() : "relay-" + relayFileInfo.getUploadId(),
+                    "relay",
+                    0,
+                    relayFileInfo.getSenderName() != null ? relayFileInfo.getSenderName() : "Relay User",
+                    null
+                );
+                
+                session = new ShareSession(pin, fileInfo, senderPeer, System.currentTimeMillis() + DEFAULT_EXPIRY);
+                
+                // Cache lại
+                globalSessions.put(pin, session);
+                
+                System.out.println("✓ Tìm thấy PIN trên relay: " + pin + " -> " + fileInfo.getFileName());
+                return session;
+            }
+        }
+        
         return null;
     }
     

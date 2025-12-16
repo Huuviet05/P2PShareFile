@@ -222,7 +222,7 @@ public class FileTransferService {
     }
     
     /**
-     * Download file từ peer khác (qua TLS)
+     * Download file từ peer khác (qua TLS hoặc Relay)
      * 
      * @param peer Peer có file
      * @param fileInfo Thông tin file cần download
@@ -235,7 +235,27 @@ public class FileTransferService {
             try {
                 System.out.println("📥 Đang download file: " + fileInfo.getFileName() + " từ " + peer);
                 
-                // Kết nối đến peer qua TLS
+                // Nếu peer là từ relay hoặc file có relay info, download qua relay
+                if ("relay".equals(peer.getIpAddress()) || 
+                    (fileInfo.getRelayFileInfo() != null && isRelayEnabled())) {
+                    
+                    if (fileInfo.getRelayFileInfo() != null) {
+                        System.out.println("🌐 Download qua relay server...");
+                        if (listener != null) {
+                            listener.onRelayFallback("relay-" + System.currentTimeMillis());
+                        }
+                        downloadFileViaRelay(fileInfo.getRelayFileInfo(), saveDirectory, listener);
+                        return;
+                    } else {
+                        System.err.println("❌ File không có relay info");
+                        if (listener != null) {
+                            listener.onError(new IOException("File not available on relay server"));
+                        }
+                        return;
+                    }
+                }
+                
+                // Download P2P bình thường
                 SSLSocket socket = securityManager.createSSLSocket(peer.getIpAddress(), peer.getPort());
                 socket.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 5000);
                 socket.setSoTimeout(60000); // Timeout 60 giây

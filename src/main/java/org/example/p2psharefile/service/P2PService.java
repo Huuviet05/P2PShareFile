@@ -217,6 +217,9 @@ public class P2PService {
         // Set RelayClient cho FileSearchService để tự động upload file khi share
         if (fileTransferService.getRelayClient() != null) {
             fileSearchService.setRelayClient(fileTransferService.getRelayClient());
+            
+            // Set RelayClient cho PINCodeService để sync PIN qua Internet
+            pinCodeService.setRelayClient(fileTransferService.getRelayClient());
         }
         
         System.out.println("✓ Relay đã được bật: " + config.getServerUrl());

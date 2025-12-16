@@ -679,6 +679,259 @@ public class RelayClient {
         return null;
     }
     
+    // ========== FILE SEARCH VIA RELAY ==========
+    
+    /**
+     * Đăng ký file với relay server để cho phép search
+     * 
+     * @param relayFileInfo Thông tin file đã upload
+     * @return true nếu thành công
+     */
+    public boolean registerFileForSearch(RelayFileInfo relayFileInfo) {
+        try {
+            String url = config.getServerUrl() + "/api/files/register";
+            
+            String json = String.format(
+                "{\"uploadId\":\"%s\",\"fileName\":\"%s\",\"fileSize\":%d,\"fileHash\":\"%s\"," +
+                "\"senderId\":\"%s\",\"senderName\":\"%s\"}",
+                relayFileInfo.getUploadId(),
+                relayFileInfo.getFileName(),
+                relayFileInfo.getFileSize(),
+                relayFileInfo.getFileHash() != null ? relayFileInfo.getFileHash() : "",
+                relayFileInfo.getSenderId() != null ? relayFileInfo.getSenderId() : "",
+                relayFileInfo.getSenderName() != null ? relayFileInfo.getSenderName() : ""
+            );
+            
+            HttpURLConnection conn = (HttpURLConnection) new URI(url).toURL().openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(config.getConnectTimeoutMs());
+            conn.setReadTimeout(config.getReadTimeoutMs());
+            
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(json.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+            }
+            
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                LOGGER.info("✓ File registered for search: " + relayFileInfo.getFileName());
+                return true;
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "❌ Error registering file for search: " + e.getMessage(), e);
+            return false;
+        }
+    }
+    
+    /**
+     * Tìm kiếm file trên relay server
+     * 
+     * @param query Từ khóa tìm kiếm
+     * @param excludeSenderId Loại trừ file của sender này
+     * @return Danh sách RelayFileInfo tìm được
+     */
+    public java.util.List<RelayFileInfo> searchFiles(String query, String excludeSenderId) {
+        java.util.List<RelayFileInfo> results = new java.util.ArrayList<>();
+        
+        try {
+            String encodedQuery = java.net.URLEncoder.encode(query, "UTF-8");
+            String url = config.getServerUrl() + "/api/files/search?q=" + encodedQuery;
+            if (excludeSenderId != null) {
+                url += "&excludeSender=" + excludeSenderId;
+            }
+            
+            HttpURLConnection conn = (HttpURLConnection) new URI(url).toURL().openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(config.getConnectTimeoutMs());
+            conn.setReadTimeout(config.getReadTimeoutMs());
+            
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                LOGGER.warning("⚠ Search failed: " + responseCode);
+                return results;
+            }
+            
+            String response = readResponse(conn.getInputStream());
+            results = parseFileSearchResults(response);
+            
+            LOGGER.info("🔍 Search \"" + query + "\" -> " + results.size() + " results");
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "❌ Error searching files: " + e.getMessage(), e);
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Parse kết quả tìm kiếm file từ JSON
+     */
+    private java.util.List<RelayFileInfo> parseFileSearchResults(String json) {
+        java.util.List<RelayFileInfo> results = new java.util.ArrayList<>();
+        
+        try {
+            int filesStart = json.indexOf("\"files\":[");
+            if (filesStart < 0) return results;
+            
+            int arrayStart = json.indexOf('[', filesStart);
+            int arrayEnd = json.lastIndexOf(']');
+            String filesArrayJson = json.substring(arrayStart + 1, arrayEnd);
+            
+            if (filesArrayJson.trim().isEmpty()) return results;
+            
+            // Split by },{
+            String[] fileJsons = filesArrayJson.split("\\},\\{");
+            
+            for (String fileJson : fileJsons) {
+                fileJson = fileJson.replaceAll("[\\{\\}]", "");
+                
+                String uploadId = extractJsonFieldValue(fileJson, "uploadId");
+                String fileName = extractJsonFieldValue(fileJson, "fileName");
+                String fileSizeStr = extractJsonFieldValue(fileJson, "fileSize");
+                String fileHash = extractJsonFieldValue(fileJson, "fileHash");
+                String senderId = extractJsonFieldValue(fileJson, "senderId");
+                String senderName = extractJsonFieldValue(fileJson, "senderName");
+                String downloadUrl = extractJsonFieldValue(fileJson, "downloadUrl");
+                
+                if (uploadId != null && fileName != null) {
+                    long fileSize = fileSizeStr != null ? Long.parseLong(fileSizeStr) : 0;
+                    
+                    // Tạo full download URL
+                    String fullDownloadUrl = downloadUrl != null && downloadUrl.startsWith("/") 
+                        ? config.getServerUrl() + downloadUrl 
+                        : downloadUrl;
+                    
+                    RelayFileInfo fileInfo = new RelayFileInfo(uploadId, fileName, fileSize, fileHash, fullDownloadUrl);
+                    fileInfo.setSenderId(senderId);
+                    fileInfo.setSenderName(senderName);
+                    results.add(fileInfo);
+                }
+            }
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Error parsing file search results: " + e.getMessage(), e);
+        }
+        
+        return results;
+    }
+    
+    // ========== PIN (QUICK SHARE) VIA RELAY ==========
+    
+    /**
+     * Tạo PIN trên relay server cho Quick Share
+     * 
+     * @param pin Mã PIN 6 số
+     * @param relayFileInfo Thông tin file đã upload
+     * @param expiryMs Thời gian hết hạn (ms)
+     * @return true nếu thành công
+     */
+    public boolean createPIN(String pin, RelayFileInfo relayFileInfo, long expiryMs) {
+        try {
+            String url = config.getServerUrl() + "/api/pin/create";
+            
+            String json = String.format(
+                "{\"pin\":\"%s\",\"uploadId\":\"%s\",\"fileName\":\"%s\",\"fileSize\":%d," +
+                "\"fileHash\":\"%s\",\"senderId\":\"%s\",\"senderName\":\"%s\"," +
+                "\"downloadUrl\":\"%s\",\"expiryMs\":%d}",
+                pin,
+                relayFileInfo.getUploadId(),
+                relayFileInfo.getFileName(),
+                relayFileInfo.getFileSize(),
+                relayFileInfo.getFileHash() != null ? relayFileInfo.getFileHash() : "",
+                relayFileInfo.getSenderId() != null ? relayFileInfo.getSenderId() : "",
+                relayFileInfo.getSenderName() != null ? relayFileInfo.getSenderName() : "",
+                relayFileInfo.getDownloadUrl() != null ? relayFileInfo.getDownloadUrl() : "",
+                expiryMs
+            );
+            
+            HttpURLConnection conn = (HttpURLConnection) new URI(url).toURL().openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(config.getConnectTimeoutMs());
+            conn.setReadTimeout(config.getReadTimeoutMs());
+            
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(json.getBytes(StandardCharsets.UTF_8));
+                os.flush();
+            }
+            
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                LOGGER.info("✓ PIN created on relay: " + pin);
+                return true;
+            }
+            
+            return false;
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "❌ Error creating PIN: " + e.getMessage(), e);
+            return false;
+        }
+    }
+    
+    /**
+     * Tìm PIN trên relay server
+     * 
+     * @param pin Mã PIN 6 số
+     * @return RelayFileInfo nếu tìm thấy, null nếu không
+     */
+    public RelayFileInfo findPIN(String pin) {
+        try {
+            String url = config.getServerUrl() + "/api/pin/find?pin=" + pin;
+            
+            HttpURLConnection conn = (HttpURLConnection) new URI(url).toURL().openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(config.getConnectTimeoutMs());
+            conn.setReadTimeout(config.getReadTimeoutMs());
+            
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                LOGGER.warning("⚠ PIN not found or expired: " + pin);
+                return null;
+            }
+            
+            String response = readResponse(conn.getInputStream());
+            
+            // Parse response
+            String found = extractJsonFieldValue(response, "found");
+            if (!"true".equals(found)) {
+                return null;
+            }
+            
+            String uploadId = extractJsonFieldValue(response, "uploadId");
+            String fileName = extractJsonFieldValue(response, "fileName");
+            String fileSizeStr = extractJsonFieldValue(response, "fileSize");
+            String fileHash = extractJsonFieldValue(response, "fileHash");
+            String senderId = extractJsonFieldValue(response, "senderId");
+            String senderName = extractJsonFieldValue(response, "senderName");
+            String downloadUrl = extractJsonFieldValue(response, "downloadUrl");
+            
+            long fileSize = fileSizeStr != null ? Long.parseLong(fileSizeStr) : 0;
+            
+            // Tạo full download URL nếu cần
+            String fullDownloadUrl = downloadUrl != null && downloadUrl.startsWith("/") 
+                ? config.getServerUrl() + downloadUrl 
+                : downloadUrl;
+            
+            RelayFileInfo fileInfo = new RelayFileInfo(uploadId, fileName, fileSize, fileHash, fullDownloadUrl);
+            fileInfo.setSenderId(senderId);
+            fileInfo.setSenderName(senderName);
+            
+            LOGGER.info("✓ PIN found: " + pin + " -> " + fileName);
+            return fileInfo;
+            
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "❌ Error finding PIN: " + e.getMessage(), e);
+            return null;
+        }
+    }
+    
     public RelayConfig getConfig() {
         return config;
     }

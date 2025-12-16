@@ -38,11 +38,79 @@ public class RelayServer {
     private final Path storageDir;
     private final long defaultExpiryMs;
     private final Map<String, UploadSession> uploads;
+    private final Map<String, FileEntry> fileRegistry;  // File registry cho search
+    private final Map<String, PINSession> pinRegistry;  // PIN registry cho Quick Share
     private final ScheduledExecutorService cleanupExecutor;
     private final PeerRegistry peerRegistry;  // Peer discovery qua relay
     
     private HttpServer server;
     private volatile boolean running;
+    
+    /**
+     * File entry trong registry (để search)
+     */
+    private static class FileEntry {
+        String uploadId;
+        String fileName;
+        long fileSize;
+        String fileHash;
+        String senderId;
+        String senderName;
+        String downloadUrl;
+        long createdTime;
+        long expiryTime;
+        
+        FileEntry(String uploadId, String fileName, long fileSize, String fileHash,
+                 String senderId, String senderName, String downloadUrl, long expiryTime) {
+            this.uploadId = uploadId;
+            this.fileName = fileName;
+            this.fileSize = fileSize;
+            this.fileHash = fileHash;
+            this.senderId = senderId;
+            this.senderName = senderName;
+            this.downloadUrl = downloadUrl;
+            this.createdTime = System.currentTimeMillis();
+            this.expiryTime = expiryTime;
+        }
+        
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
+    
+    /**
+     * PIN session cho Quick Share
+     */
+    private static class PINSession {
+        String pin;
+        String uploadId;
+        String fileName;
+        long fileSize;
+        String fileHash;
+        String senderId;
+        String senderName;
+        String downloadUrl;
+        long createdTime;
+        long expiryTime;
+        
+        PINSession(String pin, String uploadId, String fileName, long fileSize, String fileHash,
+                  String senderId, String senderName, String downloadUrl, long expiryTime) {
+            this.pin = pin;
+            this.uploadId = uploadId;
+            this.fileName = fileName;
+            this.fileSize = fileSize;
+            this.fileHash = fileHash;
+            this.senderId = senderId;
+            this.senderName = senderName;
+            this.downloadUrl = downloadUrl;
+            this.createdTime = System.currentTimeMillis();
+            this.expiryTime = expiryTime;
+        }
+        
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
     
     /**
      * Upload session tracking
@@ -84,6 +152,8 @@ public class RelayServer {
         this.storageDir = storageDir;
         this.defaultExpiryMs = defaultExpiryMs;
         this.uploads = new ConcurrentHashMap<>();
+        this.fileRegistry = new ConcurrentHashMap<>();
+        this.pinRegistry = new ConcurrentHashMap<>();
         this.cleanupExecutor = Executors.newScheduledThreadPool(1);
         this.peerRegistry = new PeerRegistry();
         this.running = false;
@@ -116,6 +186,14 @@ public class RelayServer {
         server.createContext("/api/peers/register", new PeerRegisterHandler());
         server.createContext("/api/peers/list", new PeerListHandler());
         server.createContext("/api/peers/heartbeat", new PeerHeartbeatHandler());
+        
+        // File search endpoints
+        server.createContext("/api/files/register", new FileRegisterHandler());
+        server.createContext("/api/files/search", new FileSearchHandler());
+        
+        // PIN endpoints cho Quick Share
+        server.createContext("/api/pin/create", new PINCreateHandler());
+        server.createContext("/api/pin/find", new PINFindHandler());
         
         // Executor
         server.setExecutor(Executors.newCachedThreadPool());
@@ -571,6 +649,229 @@ public class RelayServer {
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE, "❌ Health check error: " + e.getMessage(), e);
                 sendResponse(exchange, 500, "{\"status\":\"unhealthy\",\"error\":\"" + e.getMessage() + "\"}");
+            }
+        }
+    }
+    
+    // ========== FILE SEARCH HANDLERS ==========
+    
+    /**
+     * Handler đăng ký file vào registry (POST /api/files/register)
+     * Body: JSON {uploadId, fileName, fileSize, fileHash, senderId, senderName}
+     */
+    private class FileRegisterHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!"POST".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "Method Not Allowed");
+                return;
+            }
+            
+            try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                
+                String uploadId = extractJsonValue(body, "uploadId");
+                String fileName = extractJsonValue(body, "fileName");
+                String fileSizeStr = extractJsonValue(body, "fileSize");
+                String fileHash = extractJsonValue(body, "fileHash");
+                String senderId = extractJsonValue(body, "senderId");
+                String senderName = extractJsonValue(body, "senderName");
+                
+                if (uploadId == null || fileName == null) {
+                    sendResponse(exchange, 400, "Missing required fields");
+                    return;
+                }
+                
+                long fileSize = fileSizeStr != null ? Long.parseLong(fileSizeStr) : 0;
+                String downloadUrl = "/api/relay/download/" + uploadId;
+                
+                FileEntry entry = new FileEntry(uploadId, fileName, fileSize, fileHash,
+                                               senderId, senderName, downloadUrl, 
+                                               System.currentTimeMillis() + defaultExpiryMs);
+                fileRegistry.put(uploadId, entry);
+                
+                LOGGER.info("📝 File registered: " + fileName + " (ID: " + uploadId + ")");
+                
+                sendJsonResponse(exchange, 200, "{\"success\":true,\"uploadId\":\"" + uploadId + "\"}");
+                
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Lỗi register file: " + e.getMessage(), e);
+                sendResponse(exchange, 400, "Bad Request: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Handler tìm kiếm file (GET /api/files/search?q=xxx)
+     */
+    private class FileSearchHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "Method Not Allowed");
+                return;
+            }
+            
+            try {
+                String query = exchange.getRequestURI().getQuery();
+                String searchQuery = "";
+                String excludeSenderId = null;
+                
+                if (query != null) {
+                    String[] params = query.split("&");
+                    for (String param : params) {
+                        if (param.startsWith("q=")) {
+                            searchQuery = java.net.URLDecoder.decode(param.substring(2), "UTF-8").toLowerCase();
+                        } else if (param.startsWith("excludeSender=")) {
+                            excludeSenderId = param.substring(14);
+                        }
+                    }
+                }
+                
+                // Tìm kiếm file trong registry
+                List<FileEntry> results = new ArrayList<>();
+                for (FileEntry entry : fileRegistry.values()) {
+                    if (entry.isExpired()) continue;
+                    if (excludeSenderId != null && excludeSenderId.equals(entry.senderId)) continue;
+                    
+                    if (searchQuery.isEmpty() || entry.fileName.toLowerCase().contains(searchQuery)) {
+                        results.add(entry);
+                    }
+                }
+                
+                // Build JSON response
+                StringBuilder json = new StringBuilder("{\"files\":[");
+                for (int i = 0; i < results.size(); i++) {
+                    if (i > 0) json.append(",");
+                    FileEntry f = results.get(i);
+                    json.append("{")
+                        .append("\"uploadId\":\"").append(f.uploadId).append("\",")
+                        .append("\"fileName\":\"").append(f.fileName).append("\",")
+                        .append("\"fileSize\":").append(f.fileSize).append(",")
+                        .append("\"fileHash\":\"").append(f.fileHash != null ? f.fileHash : "").append("\",")
+                        .append("\"senderId\":\"").append(f.senderId != null ? f.senderId : "").append("\",")
+                        .append("\"senderName\":\"").append(f.senderName != null ? f.senderName : "").append("\",")
+                        .append("\"downloadUrl\":\"").append(f.downloadUrl).append("\"")
+                        .append("}");
+                }
+                json.append("],\"count\":").append(results.size()).append("}");
+                
+                LOGGER.info("🔍 File search: \"" + searchQuery + "\" -> " + results.size() + " results");
+                sendJsonResponse(exchange, 200, json.toString());
+                
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Lỗi search files: " + e.getMessage(), e);
+                sendResponse(exchange, 500, "Internal Server Error");
+            }
+        }
+    }
+    
+    // ========== PIN HANDLERS ==========
+    
+    /**
+     * Handler tạo PIN (POST /api/pin/create)
+     * Body: JSON {pin, uploadId, fileName, fileSize, fileHash, senderId, senderName, downloadUrl}
+     */
+    private class PINCreateHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!"POST".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "Method Not Allowed");
+                return;
+            }
+            
+            try {
+                String body = new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                
+                String pin = extractJsonValue(body, "pin");
+                String uploadId = extractJsonValue(body, "uploadId");
+                String fileName = extractJsonValue(body, "fileName");
+                String fileSizeStr = extractJsonValue(body, "fileSize");
+                String fileHash = extractJsonValue(body, "fileHash");
+                String senderId = extractJsonValue(body, "senderId");
+                String senderName = extractJsonValue(body, "senderName");
+                String downloadUrl = extractJsonValue(body, "downloadUrl");
+                String expiryStr = extractJsonValue(body, "expiryMs");
+                
+                if (pin == null || uploadId == null || fileName == null) {
+                    sendResponse(exchange, 400, "Missing required fields");
+                    return;
+                }
+                
+                long fileSize = fileSizeStr != null ? Long.parseLong(fileSizeStr) : 0;
+                long expiryMs = expiryStr != null ? Long.parseLong(expiryStr) : 600000; // Default 10 minutes
+                
+                PINSession session = new PINSession(pin, uploadId, fileName, fileSize, fileHash,
+                                                   senderId, senderName, downloadUrl,
+                                                   System.currentTimeMillis() + expiryMs);
+                pinRegistry.put(pin, session);
+                
+                LOGGER.info("📌 PIN created: " + pin + " for file: " + fileName);
+                
+                sendJsonResponse(exchange, 200, "{\"success\":true,\"pin\":\"" + pin + "\"}");
+                
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Lỗi create PIN: " + e.getMessage(), e);
+                sendResponse(exchange, 400, "Bad Request: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Handler tìm PIN (GET /api/pin/find?pin=xxx)
+     */
+    private class PINFindHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (!"GET".equals(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "Method Not Allowed");
+                return;
+            }
+            
+            try {
+                String query = exchange.getRequestURI().getQuery();
+                String pin = null;
+                
+                if (query != null && query.startsWith("pin=")) {
+                    pin = query.substring(4);
+                }
+                
+                if (pin == null) {
+                    sendResponse(exchange, 400, "Missing pin parameter");
+                    return;
+                }
+                
+                PINSession session = pinRegistry.get(pin);
+                
+                if (session == null) {
+                    sendJsonResponse(exchange, 404, "{\"found\":false,\"error\":\"PIN not found\"}");
+                    return;
+                }
+                
+                if (session.isExpired()) {
+                    pinRegistry.remove(pin);
+                    sendJsonResponse(exchange, 410, "{\"found\":false,\"error\":\"PIN expired\"}");
+                    return;
+                }
+                
+                // Return PIN session info
+                String json = String.format(
+                    "{\"found\":true,\"pin\":\"%s\",\"uploadId\":\"%s\",\"fileName\":\"%s\"," +
+                    "\"fileSize\":%d,\"fileHash\":\"%s\",\"senderId\":\"%s\",\"senderName\":\"%s\"," +
+                    "\"downloadUrl\":\"%s\"}",
+                    session.pin, session.uploadId, session.fileName, session.fileSize,
+                    session.fileHash != null ? session.fileHash : "",
+                    session.senderId != null ? session.senderId : "",
+                    session.senderName != null ? session.senderName : "",
+                    session.downloadUrl != null ? session.downloadUrl : ""
+                );
+                
+                LOGGER.info("📌 PIN found: " + pin + " -> " + session.fileName);
+                sendJsonResponse(exchange, 200, json);
+                
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Lỗi find PIN: " + e.getMessage(), e);
+                sendResponse(exchange, 500, "Internal Server Error");
             }
         }
     }

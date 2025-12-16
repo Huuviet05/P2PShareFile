@@ -260,7 +260,7 @@ public class FileSearchService {
     }
 
     /**
-     * Tìm kiếm file từ các peer
+     * Tìm kiếm file từ các peer (P2P + Relay)
      */
     public void searchFile(String query, SearchResultCallback callback) {
         String requestId = UUID.randomUUID().toString();
@@ -273,41 +273,111 @@ public class FileSearchService {
         // Lấy danh sách peer
         List<PeerInfo> peers = peerDiscovery.getDiscoveredPeers();
 
-        if (peers.isEmpty()) {
+        // Tìm kiếm trên relay server trước (nếu có)
+        if (relayClient != null) {
+            executorService.submit(() -> searchOnRelay(query, callback));
+        }
+
+        if (peers.isEmpty() && relayClient == null) {
             System.out.println("⚠ Không có peer nào để tìm kiếm");
             callback.onSearchComplete();
             activeSearches.remove(requestId);
             return;
         }
 
-        System.out.println("📡 Gửi search request đến " + peers.size() + " peer(s)");
+        int peerCount = peers.isEmpty() ? 0 : peers.size();
+        System.out.println("📡 Gửi search request đến " + peerCount + " peer(s)" + 
+                          (relayClient != null ? " + relay server" : ""));
 
-        // Gửi search request đến từng peer
-        CountDownLatch latch = new CountDownLatch(peers.size());
+        if (!peers.isEmpty()) {
+            // Gửi search request đến từng peer
+            CountDownLatch latch = new CountDownLatch(peers.size());
 
-        for (PeerInfo peer : peers) {
-            executorService.submit(() -> {
-                try {
-                    sendSearchRequest(peer, request, callback);
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
-
-        // Timeout sau SEARCH_TIMEOUT
-        scheduledExecutor.schedule(() -> {
-            try {
-                // Đợi tất cả peer phản hồi hoặc timeout
-                latch.await(SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                // Ignore
+            for (PeerInfo peer : peers) {
+                executorService.submit(() -> {
+                    try {
+                        sendSearchRequest(peer, request, callback);
+                    } finally {
+                        latch.countDown();
+                    }
+                });
             }
 
-            activeSearches.remove(requestId);
-            callback.onSearchComplete();
+            // Timeout sau SEARCH_TIMEOUT
+            scheduledExecutor.schedule(() -> {
+                try {
+                    // Đợi tất cả peer phản hồi hoặc timeout
+                    latch.await(SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
 
-        }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
+                activeSearches.remove(requestId);
+                callback.onSearchComplete();
+
+            }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
+        } else {
+            // Chỉ có relay search
+            scheduledExecutor.schedule(() -> {
+                activeSearches.remove(requestId);
+                callback.onSearchComplete();
+            }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
+        }
+    }
+    
+    /**
+     * Tìm kiếm file trên relay server
+     */
+    private void searchOnRelay(String query, SearchResultCallback callback) {
+        try {
+            System.out.println("🌐 Tìm kiếm trên relay server: \"" + query + "\"");
+            
+            List<org.example.p2psharefile.model.RelayFileInfo> relayResults = 
+                relayClient.searchFiles(query, localPeer.getPeerId());
+            
+            if (relayResults.isEmpty()) {
+                System.out.println("  → Không tìm thấy file nào trên relay");
+                return;
+            }
+            
+            System.out.println("  → Tìm thấy " + relayResults.size() + " file(s) trên relay");
+            
+            // Chuyển đổi RelayFileInfo thành FileInfo và SearchResponse
+            for (org.example.p2psharefile.model.RelayFileInfo relayFile : relayResults) {
+                // Tạo PeerInfo cho sender (từ relay)
+                PeerInfo senderPeer = new PeerInfo(
+                    relayFile.getSenderId() != null ? relayFile.getSenderId() : "relay-" + relayFile.getUploadId(),
+                    "relay",  // IP là "relay" để phân biệt
+                    0,
+                    relayFile.getSenderName() != null ? relayFile.getSenderName() : "Relay User",
+                    null
+                );
+                
+                // Tạo FileInfo
+                FileInfo fileInfo = new FileInfo(
+                    relayFile.getFileName(),
+                    relayFile.getFileSize(),
+                    relayFile.getDownloadUrl()  // Dùng downloadUrl làm path
+                );
+                fileInfo.setChecksum(relayFile.getFileHash());
+                fileInfo.setFileHash(relayFile.getFileHash());
+                fileInfo.setRelayFileInfo(relayFile);
+                
+                // Tạo SearchResponse
+                List<FileInfo> files = new ArrayList<>();
+                files.add(fileInfo);
+                SearchResponse response = new SearchResponse(
+                    UUID.randomUUID().toString(),
+                    senderPeer,
+                    files
+                );
+                
+                callback.onSearchResult(response);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi tìm kiếm trên relay: " + e.getMessage());
+        }
     }
 
     /**
@@ -414,6 +484,9 @@ public class FileSearchService {
                         
                         // Lưu RelayFileInfo vào FileInfo
                         fileInfo.setRelayFileInfo(relayFileInfo);
+                        
+                        // Đăng ký file để có thể search được
+                        relayClient.registerFileForSearch(relayFileInfo);
                     }
                     
                     @Override
