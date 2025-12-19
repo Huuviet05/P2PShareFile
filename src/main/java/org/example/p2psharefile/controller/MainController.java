@@ -38,11 +38,7 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private Label statusDot;
     @FXML private Label peerCountLabel;
     
-    // Tab 1: Kết nối
-    @FXML private TextField displayNameField;
-    @FXML private TextField portField;
-    @FXML private Button startButton;
-    @FXML private Button stopButton;
+    // Tab 1: Code (Quick Share) - không cần displayNameField, portField, startButton, stopButton
     @FXML private ListView<PeerInfo> peerListView;
     
     // Tab 2: Chia sẻ file
@@ -58,6 +54,7 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private Button previewButton;
     @FXML private Button downloadButton;
     @FXML private TextArea logTextArea;
+    @FXML private Label logLabel;
     
     // Tab 4: Share Code (PIN)
     @FXML private ListView<FileInfo> pinShareFileListView;
@@ -124,20 +121,6 @@ public class MainController implements P2PService.P2PServiceListener {
         // Setup custom cell factory cho sharedFilesListView với nút Hủy
         setupSharedFilesListView();
         
-        // Set default values - Port tự động random, không cần nhập
-        displayNameField.setText("Peer_" + System.getProperty("user.name"));
-        // Port ngẫu nhiên: sẽ được tự động chọn khi Start
-        portField.setText("AUTO");
-        portField.setDisable(true); // Khóa vì port tự động
-        portField.setStyle("-fx-background-color: #f0f0f0;");
-        
-        // Initial state
-        stopButton.setDisable(true);
-        searchButton.setDisable(true);
-        previewButton.setDisable(true);
-        downloadButton.setDisable(true);
-        receiveButton.setDisable(true);
-        
         // Set PIN input field max length to 6 digits
         pinInputField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (!newValue.matches("\\d*")) {
@@ -147,11 +130,6 @@ public class MainController implements P2PService.P2PServiceListener {
                 pinInputField.setText(newValue.substring(0, 6));
             }
         });
-        searchButton.setDisable(true);
-        previewButton.setDisable(true);
-        downloadButton.setDisable(true);
-        
-        updateStatus("Offline", "#ff4757");
         
         // Selection listener cho search results để enable/disable preview/download buttons
         searchResultsListView.getSelectionModel().selectedItemProperty().addListener(
@@ -164,24 +142,22 @@ public class MainController implements P2PService.P2PServiceListener {
         
         log("📱 Ứng dụng P2P Share File đã sẵn sàng!");
         log("📁 Thư mục download mặc định: " + downloadDirectory);
-        log("ℹ️  P2P thuần túy - Mỗi peer tự chọn port ngẫu nhiên");
-        log("ℹ️  Có thể chạy nhiều client trên cùng máy để test");
+        
+        // 🚀 TỰ ĐỘNG KẾT NỐI KHI KHỞI ĐỘNG
+        Platform.runLater(() -> {
+            autoConnect();
+        });
     }
     
     /**
-     * Xử lý khi nhấn nút Start
+     * Tự động kết nối khi khởi động ứng dụng
      */
-    @FXML
-    private void handleStart() {
+    private void autoConnect() {
         try {
-            String displayName = displayNameField.getText().trim();
-            if (displayName.isEmpty()) {
-                showError("Vui lòng nhập tên hiển thị");
-                return;
-            }
+            String displayName = "Peer_" + System.getProperty("user.name");
             
             // Port = 0 nghĩa là hệ thống tự động chọn port trống
-            int port = 0; // Auto-assign random available port
+            int port = 0;
             
             // Tạo và khởi động P2P Service
             p2pService = new P2PService(displayName, port);
@@ -192,35 +168,36 @@ public class MainController implements P2PService.P2PServiceListener {
             
             p2pService.start();
             
-            // Lấy port thực tế được assign và hiển thị
+            // Lấy port thực tế được assign
             int actualPort = p2pService.getActualPort();
-            portField.setText(String.valueOf(actualPort));
             
             // Hiển thị tên peer ở header
             peerNameLabel.setText(displayName);
             
-            // Update UI
-            startButton.setDisable(true);
-            stopButton.setDisable(false);
-            displayNameField.setDisable(true);
-            portField.setDisable(true);
+            // Enable các chức năng
             searchButton.setDisable(false);
             receiveButton.setDisable(false);
             
-            log("🚀 Đã khởi động P2P Service");
-            log("📡 Port được chọn tự động: " + actualPort);
-            log("🔐 Security: TLS + AES-256 Encryption + ECDSA Signatures");
-            log("📦 Compression: GZIP (auto for text/archives)");
-            log("🔒 File integrity: SHA-256 + MD5 checksums");
+            log("✅ Đã tự động kết nối!");
+            log("📡 Port: " + actualPort);
+            log("🔐 Security: TLS + AES-256 + ECDSA");
             
         } catch (Exception e) {
-            showError("Lỗi khi khởi động: " + e.getMessage());
-            log("❌ Lỗi: " + e.getMessage());
+            log("❌ Lỗi tự động kết nối: " + e.getMessage());
+            updateStatus("Lỗi", "#dc2626");
         }
     }
     
     /**
-     * Xử lý khi nhấn nút Stop
+     * Xử lý khi nhấn nút Start (giữ lại để tương thích, nhưng không sử dụng trong UI mới)
+     */
+    @FXML
+    private void handleStart() {
+        // Đã tự động kết nối khi khởi động, không cần xử lý
+    }
+    
+    /**
+     * Xử lý khi nhấn nút Stop (giữ lại để tương thích, nhưng không sử dụng trong UI mới)
      */
     @FXML
     private void handleStop() {
@@ -236,11 +213,6 @@ public class MainController implements P2PService.P2PServiceListener {
         peerNameLabel.setText("");
         
         // Reset UI
-        startButton.setDisable(false);
-        stopButton.setDisable(true);
-        displayNameField.setDisable(false);
-        portField.setDisable(true);
-        portField.setText("AUTO"); // Reset về AUTO
         searchButton.setDisable(true);
         previewButton.setDisable(true);
         downloadButton.setDisable(true);
@@ -257,8 +229,8 @@ public class MainController implements P2PService.P2PServiceListener {
         currentPINSession = null;
         pinDisplayPanel.setVisible(false);
         
-        updateStatus("Disconnected", "#95a5a6");
-        peerCountLabel.setText("Peers: 0");
+        updateStatus("Offline", "#dc2626");
+        peerCountLabel.setText("0");
         
         log("🛑 Đã dừng P2P Service");
     }
@@ -1006,7 +978,30 @@ public class MainController implements P2PService.P2PServiceListener {
             String timestamp = java.time.LocalTime.now().format(
                 java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")
             );
-            logTextArea.appendText("[" + timestamp + "] " + message + "\n");
+            String logLine = "[" + timestamp + "] " + message;
+            
+            // Update TextArea (hidden, for compatibility)
+            if (logTextArea != null) {
+                logTextArea.appendText(logLine + "\n");
+            }
+            
+            // Update visible Label
+            if (logLabel != null) {
+                String current = logLabel.getText();
+                if (current == null || current.isEmpty()) {
+                    logLabel.setText(logLine);
+                } else {
+                    // Keep last 15 lines
+                    String[] lines = current.split("\n");
+                    StringBuilder sb = new StringBuilder();
+                    int start = Math.max(0, lines.length - 14);
+                    for (int i = start; i < lines.length; i++) {
+                        sb.append(lines[i]).append("\n");
+                    }
+                    sb.append(logLine);
+                    logLabel.setText(sb.toString());
+                }
+            }
         });
     }
     
