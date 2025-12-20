@@ -29,6 +29,9 @@ public class FileSearchService {
     private final Set<String> processedRequests;
     
     private RelayClient relayClient; // Để upload file lên relay server khi share
+    
+    // Connection mode: true = P2P only (LAN), false = Relay only (Internet)
+    private volatile boolean p2pOnlyMode = true;
 
     private SSLServerSocket searchServer;
     private ExecutorService executorService;
@@ -260,7 +263,7 @@ public class FileSearchService {
     }
 
     /**
-     * Tìm kiếm file từ các peer (P2P + Relay)
+     * Tìm kiếm file từ các peer (P2P hoặc Relay tùy mode)
      */
     public void searchFile(String query, SearchResultCallback callback) {
         String requestId = UUID.randomUUID().toString();
@@ -268,8 +271,29 @@ public class FileSearchService {
 
         activeSearches.put(requestId, callback);
 
-        System.out.println("🔍 Bắt đầu tìm kiếm: \"" + query + "\"");
+        System.out.println("🔍 Bắt đầu tìm kiếm: \"" + query + "\" (Mode: " + (p2pOnlyMode ? "P2P" : "Relay") + ")");
 
+        // ===== RELAY MODE =====
+        if (!p2pOnlyMode) {
+            // Chế độ Relay: Chỉ tìm trên relay server, không P2P
+            if (relayClient != null) {
+                executorService.submit(() -> {
+                    searchOnRelay(query, callback);
+                    // Schedule complete callback
+                    scheduledExecutor.schedule(() -> {
+                        activeSearches.remove(requestId);
+                        callback.onSearchComplete();
+                    }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
+                });
+            } else {
+                System.out.println("⚠ Relay client chưa được kích hoạt");
+                callback.onSearchComplete();
+                activeSearches.remove(requestId);
+            }
+            return;
+        }
+
+        // ===== P2P MODE =====
         // Lấy danh sách peer và lọc chỉ lấy LAN peers (private IPs)
         List<PeerInfo> allPeers = peerDiscovery.getDiscoveredPeers();
         List<PeerInfo> lanPeers = new ArrayList<>();
@@ -279,56 +303,42 @@ public class FileSearchService {
             }
         }
 
-        // Tìm kiếm trên relay server (cho Internet peers)
-        if (relayClient != null) {
-            executorService.submit(() -> searchOnRelay(query, callback));
-        }
-
-        if (lanPeers.isEmpty() && relayClient == null) {
-            System.out.println("⚠ Không có peer nào để tìm kiếm");
+        if (lanPeers.isEmpty()) {
+            System.out.println("⚠ Không có peer LAN nào để tìm kiếm");
             callback.onSearchComplete();
             activeSearches.remove(requestId);
             return;
         }
 
         int lanCount = lanPeers.size();
-        System.out.println("📡 Gửi search request đến " + lanCount + " LAN peer(s)" + 
-                          (relayClient != null ? " + relay server" : ""));
+        System.out.println("📡 Gửi search request đến " + lanCount + " LAN peer(s)");
 
-        if (!lanPeers.isEmpty()) {
-            // Gửi search request đến LAN peers only
-            CountDownLatch latch = new CountDownLatch(lanPeers.size());
+        // Gửi search request đến LAN peers only
+        CountDownLatch latch = new CountDownLatch(lanPeers.size());
 
-            for (PeerInfo peer : lanPeers) {
-                executorService.submit(() -> {
-                    try {
-                        sendSearchRequest(peer, request, callback);
-                    } finally {
-                        latch.countDown();
-                    }
-                });
+        for (PeerInfo peer : lanPeers) {
+            executorService.submit(() -> {
+                try {
+                    sendSearchRequest(peer, request, callback);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        // Timeout sau SEARCH_TIMEOUT
+        scheduledExecutor.schedule(() -> {
+            try {
+                // Đợi tất cả peer phản hồi hoặc timeout
+                latch.await(SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                // Ignore
             }
 
-            // Timeout sau SEARCH_TIMEOUT
-            scheduledExecutor.schedule(() -> {
-                try {
-                    // Đợi tất cả peer phản hồi hoặc timeout
-                    latch.await(SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
+            activeSearches.remove(requestId);
+            callback.onSearchComplete();
 
-                activeSearches.remove(requestId);
-                callback.onSearchComplete();
-
-            }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
-        } else {
-            // Chỉ có relay search
-            scheduledExecutor.schedule(() -> {
-                activeSearches.remove(requestId);
-                callback.onSearchComplete();
-            }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
-        }
+        }, SEARCH_TIMEOUT, TimeUnit.MILLISECONDS);
     }
     
     /**
@@ -545,6 +555,22 @@ public class FileSearchService {
             count += files.size();
         }
         return count;
+    }
+    
+    /**
+     * Set connection mode
+     * @param p2pOnly true = P2P only (LAN), false = Relay only (Internet)
+     */
+    public void setP2POnlyMode(boolean p2pOnly) {
+        this.p2pOnlyMode = p2pOnly;
+        System.out.println("🔧 FileSearchService mode: " + (p2pOnly ? "P2P (LAN)" : "Relay (Internet)"));
+    }
+    
+    /**
+     * Get current connection mode
+     */
+    public boolean isP2POnlyMode() {
+        return p2pOnlyMode;
     }
     
     /**

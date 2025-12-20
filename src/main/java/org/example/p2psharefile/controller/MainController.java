@@ -265,9 +265,7 @@ public class MainController implements P2PService.P2PServiceListener {
         // P2P mode handler
         p2pModeToggle.setOnAction(e -> {
             if (p2pModeToggle.isSelected()) {
-                isP2PMode = true;
-                log("🔒 Chế độ: P2P (Bảo mật cao - Mạng LAN)");
-                updateModeUI();
+                switchToP2PMode();
             } else {
                 // Đảm bảo luôn có 1 mode được chọn
                 p2pModeToggle.setSelected(true);
@@ -277,9 +275,7 @@ public class MainController implements P2PService.P2PServiceListener {
         // Relay mode handler
         relayModeToggle.setOnAction(e -> {
             if (relayModeToggle.isSelected()) {
-                isP2PMode = false;
-                log("🌐 Chế độ: Relay (Kết nối Internet)");
-                updateModeUI();
+                switchToRelayMode();
             } else {
                 // Đảm bảo luôn có 1 mode được chọn
                 relayModeToggle.setSelected(true);
@@ -288,16 +284,69 @@ public class MainController implements P2PService.P2PServiceListener {
     }
     
     /**
+     * Chuyển sang chế độ P2P (LAN)
+     */
+    private void switchToP2PMode() {
+        isP2PMode = true;
+        
+        // Cập nhật logic trong các services
+        if (p2pService != null) {
+            p2pService.setP2POnlyMode(true);
+        }
+        
+        // Cập nhật UI
+        updateModeUI();
+        log("🔒 Đã chuyển sang chế độ P2P (Mạng LAN - Bảo mật cao)");
+        log("   • Tìm kiếm: Chỉ trong mạng LAN");
+        log("   • PIN Share: Chỉ với các máy trong LAN");
+        log("   • Preview: Hỗ trợ đầy đủ");
+    }
+    
+    /**
+     * Chuyển sang chế độ Relay (Internet)
+     */
+    private void switchToRelayMode() {
+        isP2PMode = false;
+        
+        // Cập nhật logic trong các services
+        if (p2pService != null) {
+            p2pService.setP2POnlyMode(false);
+        }
+        
+        // Cập nhật UI
+        updateModeUI();
+        log("🌐 Đã chuyển sang chế độ Relay (Kết nối Internet)");
+        log("   • Tìm kiếm: Qua relay server");
+        log("   • PIN Share: Qua Internet");
+        log("   • Preview: Không hỗ trợ (cần download)");
+    }
+    
+    /**
      * Cập nhật UI dựa trên mode hiện tại
      */
     private void updateModeUI() {
-        if (isP2PMode) {
-            // P2P mode: Preview enabled, search only LAN
-            statusLabel.setText("P2P Mode");
-        } else {
-            // Relay mode: Preview disabled, search qua relay
-            statusLabel.setText("Relay Mode");
-        }
+        Platform.runLater(() -> {
+            if (isP2PMode) {
+                // P2P mode: Preview enabled, search only LAN
+                statusLabel.setText("P2P Mode (LAN)");
+                statusLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold; -fx-font-size: 14;");
+                if (statusDot != null) {
+                    statusDot.setStyle("-fx-text-fill: #10b981; -fx-font-size: 20;");
+                }
+                // Enable preview button
+                if (previewButton != null) {
+                    previewButton.setDisable(false);
+                }
+            } else {
+                // Relay mode: Preview disabled, search qua relay
+                statusLabel.setText("Relay Mode (Internet)");
+                statusLabel.setStyle("-fx-text-fill: #3b82f6; -fx-font-weight: bold; -fx-font-size: 14;");
+                if (statusDot != null) {
+                    statusDot.setStyle("-fx-text-fill: #3b82f6; -fx-font-size: 20;");
+                }
+                // Preview không khả dụng trong relay mode (có thể disable)
+            }
+        });
     }
     
     /**

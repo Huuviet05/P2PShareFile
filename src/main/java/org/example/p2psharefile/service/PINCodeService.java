@@ -38,6 +38,9 @@ public class PINCodeService {
     
     private org.example.p2psharefile.network.RelayClient relayClient; // Relay client để sync PIN qua Internet
     
+    // Connection mode: true = P2P only (LAN), false = Relay only (Internet)
+    private volatile boolean p2pOnlyMode = true;
+    
     private SSLServerSocket pinServer;
     private ExecutorService executorService;
     private volatile boolean running = false;
@@ -129,15 +132,20 @@ public class PINCodeService {
         localSessions.put(pin, session);
         globalSessions.put(pin, session);
         
-        System.out.println("✓ Đã tạo PIN: " + pin + " cho file: " + fileInfo.getFileName());
+        System.out.println("✓ Đã tạo PIN: " + pin + " cho file: " + fileInfo.getFileName() + 
+                          " (Mode: " + (p2pOnlyMode ? "P2P" : "Relay") + ")");
 
-        // Upload file lên relay và tạo PIN trên relay (async)
-        if (relayClient != null) {
-            uploadAndCreatePINOnRelay(session, fileInfo, expiryMillis);
+        if (p2pOnlyMode) {
+            // ===== P2P MODE: Chỉ gửi đến LAN peers =====
+            sendPINToAllPeers(session);
+        } else {
+            // ===== RELAY MODE: Upload và tạo PIN trên relay =====
+            if (relayClient != null) {
+                uploadAndCreatePINOnRelay(session, fileInfo, expiryMillis);
+            } else {
+                System.err.println("⚠ Relay client chưa được kích hoạt!");
+            }
         }
-        
-        // Gửi PIN đến LAN peers (private IPs only)
-        sendPINToAllPeers(session);
         
         // Thông báo listeners
         notifyPINCreated(session);
@@ -233,16 +241,25 @@ public class PINCodeService {
     }
     
     /**
-     * Tìm session bằng PIN (cả local và relay)
+     * Tìm session bằng PIN (theo mode: P2P hoặc Relay)
      */
     public ShareSession findByPIN(String pin) {
+        System.out.println("🔍 Tìm PIN: " + pin + " (Mode: " + (p2pOnlyMode ? "P2P" : "Relay") + ")");
+        
         // Tìm trong local/global cache trước
         ShareSession session = globalSessions.get(pin);
         if (session != null && !session.isExpired()) {
+            System.out.println("✓ Tìm thấy PIN trong cache local: " + pin);
             return session;
         }
         
-        // Nếu không tìm thấy local, thử tìm trên relay
+        if (p2pOnlyMode) {
+            // ===== P2P MODE: Chỉ tìm local =====
+            System.out.println("⚠ Không tìm thấy PIN trong mạng LAN: " + pin);
+            return null;
+        }
+        
+        // ===== RELAY MODE: Tìm trên relay server =====
         if (relayClient != null) {
             org.example.p2psharefile.model.RelayFileInfo relayFileInfo = relayClient.findPIN(pin);
             if (relayFileInfo != null) {
@@ -275,6 +292,7 @@ public class PINCodeService {
             }
         }
         
+        System.out.println("⚠ Không tìm thấy PIN trên relay: " + pin);
         return null;
     }
     
@@ -537,6 +555,22 @@ public class PINCodeService {
     
     public void removeListener(PINCodeListener listener) {
         listeners.remove(listener);
+    }
+    
+    /**
+     * Set connection mode
+     * @param p2pOnly true = P2P only (LAN), false = Relay only (Internet)
+     */
+    public void setP2POnlyMode(boolean p2pOnly) {
+        this.p2pOnlyMode = p2pOnly;
+        System.out.println("🔧 PINCodeService mode: " + (p2pOnly ? "P2P (LAN)" : "Relay (Internet)"));
+    }
+    
+    /**
+     * Get current connection mode
+     */
+    public boolean isP2POnlyMode() {
+        return p2pOnlyMode;
     }
     
     private void notifyPINCreated(ShareSession session) {

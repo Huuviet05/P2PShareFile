@@ -807,6 +807,31 @@ public class P2PService {
         heartbeatThread.setDaemon(true);
         heartbeatThread.start();
     }
+    
+    /**
+     * Set connection mode cho tất cả services
+     * @param p2pOnly true = P2P only (LAN), false = Relay only (Internet)
+     */
+    public void setP2POnlyMode(boolean p2pOnly) {
+        System.out.println("\n🔧 ========== CHUYỂN CHẾ ĐỘ KẾT NỐI ==========");
+        System.out.println("   Mode: " + (p2pOnly ? "P2P (Mạng LAN - Bảo mật cao)" : "Relay (Internet - Kết nối mọi nơi)"));
+        
+        // Set mode cho FileSearchService
+        fileSearchService.setP2POnlyMode(p2pOnly);
+        
+        // Set mode cho PINCodeService
+        pinCodeService.setP2POnlyMode(p2pOnly);
+        
+        System.out.println("✅ Đã chuyển chế độ kết nối thành công!");
+        System.out.println("================================================\n");
+    }
+    
+    /**
+     * Kiểm tra mode hiện tại
+     */
+    public boolean isP2POnlyMode() {
+        return fileSearchService.isP2POnlyMode();
+    }
 
     private void notifyTransferError(String fileName, Exception e) {
         for (P2PServiceListener listener : listeners) {
