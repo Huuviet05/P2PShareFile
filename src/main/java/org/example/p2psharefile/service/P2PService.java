@@ -563,26 +563,31 @@ public class P2PService {
      *
      * @param pin Mã PIN 6 số
      * @param saveDirectory Thư mục lưu file
+     * @throws IllegalStateException Nếu service chưa chạy
+     * @throws IllegalArgumentException Nếu PIN không hợp lệ hoặc đã hết hạn
      */
     public void receiveByPIN(String pin, String saveDirectory) {
         if (!running) {
-            System.err.println("❌ P2P Service chưa khởi động");
-            return;
+            throw new IllegalStateException("P2P Service chưa khởi động");
         }
 
         // Tìm session bằng PIN
+        System.out.println("🔍 Đang tìm PIN: " + pin);
         ShareSession session = pinCodeService.findByPIN(pin);
 
         if (session == null) {
-            System.err.println("❌ Không tìm thấy PIN: " + pin);
-            return;
+            throw new IllegalArgumentException("Không tìm thấy PIN: " + pin);
         }
 
         if (session.isExpired()) {
-            System.err.println("❌ PIN đã hết hạn: " + pin);
-            return;
+            throw new IllegalArgumentException("PIN đã hết hạn: " + pin);
         }
 
+        System.out.println("✓ Tìm thấy PIN: " + pin + " -> " + session.getFileInfo().getFileName());
+        System.out.println("  📁 File: " + session.getFileInfo().getFileName());
+        System.out.println("  📏 Size: " + session.getFileInfo().getFileSize() + " bytes");
+        System.out.println("  🌐 Relay: " + (session.getFileInfo().getRelayFileInfo() != null ? "Yes" : "No"));
+        
         // Download file từ owner peer
         downloadFile(session.getOwnerPeer(), session.getFileInfo(), saveDirectory);
     }

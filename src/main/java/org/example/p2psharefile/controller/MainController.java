@@ -1121,9 +1121,13 @@ public class MainController implements P2PService.P2PServiceListener {
             
             try {
                 p2pService.receiveByPIN(pin, downloadDirectory);
-                log("📥 Đang nhận file bằng mã PIN: " + pin);
+                log("📥 Đang tải file bằng mã PIN: " + pin);
                 pinInputField.clear();
-                showInfo("Đã bắt đầu nhận file!\nSẽ tự động download khi tìm thấy peer có mã này.");
+                showInfo("Đã bắt đầu tải file từ mã PIN: " + pin);
+            } catch (IllegalArgumentException e) {
+                // PIN không tìm thấy hoặc hết hạn
+                showError(e.getMessage());
+                log("❌ " + e.getMessage());
             } catch (Exception e) {
                 showError("Lỗi khi nhận file: " + e.getMessage());
                 log("❌ Lỗi nhận file: " + e.getMessage());
@@ -1320,10 +1324,15 @@ public class MainController implements P2PService.P2PServiceListener {
     public void onTransferComplete(String fileName, File file) {
         Platform.runLater(() -> {
             log("✅ Download hoàn tất: " + fileName);
-            log("  🔓 Đã giải mã AES-256 và giải nén (nếu cần)");
+            if (isP2PMode) {
+                log("  🔓 Đã giải mã AES-256 và giải nén");
+            } else {
+                log("  🌐 Đã tải từ relay server");
+            }
             log("  💾 Đã lưu: " + file.getAbsolutePath());
+            String modeInfo = isP2PMode ? "Đã giải mã & giải nén (P2P)" : "Đã tải từ relay server";
             showInfo("Download thành công!\n\nFile: " + fileName + 
-                    "\nĐã giải mã & giải nén\nLưu tại: " + file.getAbsolutePath());
+                    "\n" + modeInfo + "\nLưu tại: " + file.getAbsolutePath());
         });
     }
     

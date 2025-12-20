@@ -250,6 +250,7 @@ public class RelayClient {
     
     /**
      * Upload một chunk lên server
+     * Gửi raw binary data thay vì multipart để server xử lý đơn giản hơn
      */
     private void uploadChunk(String uploadUrl, String uploadId, byte[] data, int length,
                            int chunkIndex, String fileName, RelayUploadRequest request) 
@@ -264,8 +265,9 @@ public class RelayClient {
             conn.setConnectTimeout(config.getConnectionTimeout());
             conn.setReadTimeout(config.getUploadTimeout());
             
-            // Headers
-            conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + BOUNDARY);
+            // Headers - gửi raw binary data
+            conn.setRequestProperty("Content-Type", "application/octet-stream");
+            conn.setRequestProperty("Content-Length", String.valueOf(length));
             conn.setRequestProperty("X-Upload-Id", uploadId);
             conn.setRequestProperty("X-Chunk-Index", String.valueOf(chunkIndex));
             conn.setRequestProperty("X-File-Name", fileName);
@@ -275,9 +277,10 @@ public class RelayClient {
                 conn.setRequestProperty("X-API-Key", config.getApiKey());
             }
             
-            // Write multipart body
+            // Write raw binary data directly
             try (OutputStream os = conn.getOutputStream()) {
-                writeMultipartData(os, data, length, chunkIndex);
+                os.write(data, 0, length);
+                os.flush();
             }
             
             // Check response
@@ -299,8 +302,10 @@ public class RelayClient {
     }
     
     /**
-     * Viết multipart form data
+     * Viết multipart form data - KHÔNG SỬ DỤNG NỮA
+     * Giữ lại để tham khảo
      */
+    @SuppressWarnings("unused")
     private void writeMultipartData(OutputStream os, byte[] data, int length, int chunkIndex) 
             throws IOException {
         
