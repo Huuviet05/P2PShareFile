@@ -32,10 +32,15 @@ public class RelayStarter {
     private static final String DEFAULT_STORAGE_DIR = "relay-storage";
     private static final long DEFAULT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 giờ
     
-    // Environment variable để config relay server URL
-    // Ví dụ: set RELAY_SERVER_URL=http://192.168.1.100:8080
+    // ========== RELAY SERVER URL ==========
+    // Mặc định sử dụng Render.com relay server cho Internet sharing
+    // Để test local: set USE_LOCAL_RELAY=true
+    private static final String PRODUCTION_RELAY_URL = "https://p2p-relay-server.onrender.com";
+    
+    // Environment variables
     private static final String ENV_RELAY_SERVER_URL = "RELAY_SERVER_URL";
     private static final String ENV_START_RELAY_SERVER = "START_RELAY_SERVER"; // true/false
+    private static final String ENV_USE_LOCAL_RELAY = "USE_LOCAL_RELAY"; // true/false để dùng local server
     
     private static RelayServer relayServer;
     private static ExecutorService relayExecutor;
@@ -63,18 +68,33 @@ public class RelayStarter {
         try {
             System.out.println("\n🌐 ========== KHỞI ĐỘNG RELAY SYSTEM ==========");
             
-            // Kiểm tra environment variable
+            // Kiểm tra environment variables
             String relayServerUrl = System.getenv(ENV_RELAY_SERVER_URL);
-            String startServerEnv = System.getenv(ENV_START_RELAY_SERVER);
-            boolean shouldStartServer = (startServerEnv == null || "true".equalsIgnoreCase(startServerEnv));
+            String useLocalRelayEnv = System.getenv(ENV_USE_LOCAL_RELAY);
+            boolean useLocalRelay = "true".equalsIgnoreCase(useLocalRelayEnv);
             
-            // Nếu có RELAY_SERVER_URL từ environment, dùng relay server đó (không start local server)
+            // Xác định relay server URL
+            String actualRelayUrl;
             if (relayServerUrl != null && !relayServerUrl.isEmpty()) {
-                System.out.println("🌍 Sử dụng relay server từ environment: " + relayServerUrl);
+                // Custom URL từ environment
+                actualRelayUrl = relayServerUrl;
+                System.out.println("🌍 Sử dụng relay server từ environment: " + actualRelayUrl);
+            } else if (useLocalRelay) {
+                // Test mode: sử dụng local server
+                actualRelayUrl = null; // Sẽ khởi động local server
+                System.out.println("🏠 Chế độ test: Sử dụng local relay server");
+            } else {
+                // Mặc định: Sử dụng Render.com production server
+                actualRelayUrl = PRODUCTION_RELAY_URL;
+                System.out.println("🌍 Sử dụng Render.com relay server: " + actualRelayUrl);
+            }
+            
+            // Nếu có URL (remote server), không cần start local
+            if (actualRelayUrl != null) {
                 System.out.println("   → Không khởi động local relay server");
                 
                 RelayConfig config = RelayConfig.forDevelopment();
-                config.setServerUrl(relayServerUrl);
+                config.setServerUrl(actualRelayUrl);
                 config.setPreferP2P(true);
                 config.setP2pTimeoutMs(10000);
                 config.setForceRelay(false);
@@ -84,12 +104,15 @@ public class RelayStarter {
                 System.out.println("✅ RelayClient đã được kích hoạt (remote server)");
                 System.out.println("   • Server URL: " + config.getServerUrl());
                 System.out.println("   • Ưu tiên P2P: " + config.isPreferP2P());
+                System.out.println("   • P2P Timeout: " + config.getP2pTimeoutMs() + "ms");
                 System.out.println("==================================================\n");
                 
                 return true;
             }
             
-            // Không có env variable -> Start local relay server (mặc định)
+            // Local relay mode: Start local server
+            String startServerEnv = System.getenv(ENV_START_RELAY_SERVER);
+            boolean shouldStartServer = (startServerEnv == null || "true".equalsIgnoreCase(startServerEnv));
             if (!shouldStartServer) {
                 System.out.println("⚠ Relay server bị disable (START_RELAY_SERVER=false)");
                 return false;
