@@ -270,30 +270,36 @@ public class FileSearchService {
 
         System.out.println("🔍 Bắt đầu tìm kiếm: \"" + query + "\"");
 
-        // Lấy danh sách peer
-        List<PeerInfo> peers = peerDiscovery.getDiscoveredPeers();
+        // Lấy danh sách peer và lọc chỉ lấy LAN peers (private IPs)
+        List<PeerInfo> allPeers = peerDiscovery.getDiscoveredPeers();
+        List<PeerInfo> lanPeers = new ArrayList<>();
+        for (PeerInfo peer : allPeers) {
+            if (isPrivateIP(peer.getIpAddress())) {
+                lanPeers.add(peer);
+            }
+        }
 
-        // Tìm kiếm trên relay server trước (nếu có)
+        // Tìm kiếm trên relay server (cho Internet peers)
         if (relayClient != null) {
             executorService.submit(() -> searchOnRelay(query, callback));
         }
 
-        if (peers.isEmpty() && relayClient == null) {
+        if (lanPeers.isEmpty() && relayClient == null) {
             System.out.println("⚠ Không có peer nào để tìm kiếm");
             callback.onSearchComplete();
             activeSearches.remove(requestId);
             return;
         }
 
-        int peerCount = peers.isEmpty() ? 0 : peers.size();
-        System.out.println("📡 Gửi search request đến " + peerCount + " peer(s)" + 
+        int lanCount = lanPeers.size();
+        System.out.println("📡 Gửi search request đến " + lanCount + " LAN peer(s)" + 
                           (relayClient != null ? " + relay server" : ""));
 
-        if (!peers.isEmpty()) {
-            // Gửi search request đến từng peer
-            CountDownLatch latch = new CountDownLatch(peers.size());
+        if (!lanPeers.isEmpty()) {
+            // Gửi search request đến LAN peers only
+            CountDownLatch latch = new CountDownLatch(lanPeers.size());
 
-            for (PeerInfo peer : peers) {
+            for (PeerInfo peer : lanPeers) {
                 executorService.submit(() -> {
                     try {
                         sendSearchRequest(peer, request, callback);
@@ -539,5 +545,34 @@ public class FileSearchService {
             count += files.size();
         }
         return count;
+    }
+    
+    /**
+     * Kiểm tra IP có phải private IP (LAN) không
+     * Private IPs: 10.x.x.x, 172.16-31.x.x, 192.168.x.x, 127.x.x.x
+     */
+    private boolean isPrivateIP(String ip) {
+        if (ip == null || ip.equals("relay") || ip.isEmpty()) return false;
+        
+        try {
+            String[] parts = ip.split("\\.");
+            if (parts.length != 4) return false;
+            
+            int first = Integer.parseInt(parts[0]);
+            int second = Integer.parseInt(parts[1]);
+            
+            // 10.0.0.0/8
+            if (first == 10) return true;
+            // 172.16.0.0/12
+            if (first == 172 && second >= 16 && second <= 31) return true;
+            // 192.168.0.0/16
+            if (first == 192 && second == 168) return true;
+            // localhost
+            if (first == 127) return true;
+            
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
