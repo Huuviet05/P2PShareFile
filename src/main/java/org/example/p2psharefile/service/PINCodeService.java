@@ -254,7 +254,7 @@ public class PINCodeService {
     }
     
     /**
-     * Gửi PIN đến tất cả peers
+     * Gửi PIN đến tất cả LAN peers (bỏ qua Internet/relay peers)
      */
     private void sendPINToAllPeers(ShareSession session) {
         if (peerDiscovery == null) {
@@ -263,13 +263,52 @@ public class PINCodeService {
         }
 
         List<PeerInfo> peers = peerDiscovery.getDiscoveredPeers();
-        System.out.println("📡 Gửi PIN: " + session.getPin() + " đến " + peers.size() + " peer(s)");
-
+        
+        // Lọc chỉ lấy LAN peers (private IP)
+        List<PeerInfo> lanPeers = new ArrayList<>();
         for (PeerInfo peer : peers) {
-            // Không gửi cho chính mình
-            if (peer.getPeerId().equals(localPeer.getPeerId())) continue;
+            if (!peer.getPeerId().equals(localPeer.getPeerId()) && isPrivateIP(peer.getIpAddress())) {
+                lanPeers.add(peer);
+            }
+        }
+        
+        if (lanPeers.isEmpty()) {
+            System.out.println("✓ PIN đã được gửi lên relay server, không có LAN peer nào");
+            return;
+        }
+        
+        System.out.println("📡 Gửi PIN: " + session.getPin() + " đến " + lanPeers.size() + " LAN peer(s)");
 
+        for (PeerInfo peer : lanPeers) {
             sendPINToPeerTcp(session, peer);
+        }
+    }
+    
+    /**
+     * Kiểm tra IP có phải private IP (LAN) không
+     */
+    private boolean isPrivateIP(String ip) {
+        if (ip == null || ip.equals("relay")) return false;
+        
+        try {
+            String[] parts = ip.split("\\.");
+            if (parts.length != 4) return false;
+            
+            int first = Integer.parseInt(parts[0]);
+            int second = Integer.parseInt(parts[1]);
+            
+            // 10.0.0.0/8
+            if (first == 10) return true;
+            // 172.16.0.0/12
+            if (first == 172 && second >= 16 && second <= 31) return true;
+            // 192.168.0.0/16
+            if (first == 192 && second == 168) return true;
+            // localhost
+            if (first == 127) return true;
+            
+            return false;
+        } catch (Exception e) {
+            return false;
         }
     }
     
