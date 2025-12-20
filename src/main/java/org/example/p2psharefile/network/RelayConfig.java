@@ -91,8 +91,9 @@ public class RelayConfig implements Serializable {
         this.maxFileSize = 0; // No limit
         this.defaultExpiryTime = 24 * 60 * 60 * 1000; // 24 hours
         
-        // Security
-        this.enableEncryption = true;
+        // Security - Tắt encryption vì relay server đã dùng HTTPS
+        // và việc sync encrypted flag giữa upload/download phức tạp
+        this.enableEncryption = false;
         this.verifyCertificate = true;
         
         // Logging

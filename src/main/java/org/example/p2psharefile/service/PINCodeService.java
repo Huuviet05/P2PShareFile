@@ -139,9 +139,10 @@ public class PINCodeService {
             // ===== P2P MODE: Chỉ gửi đến LAN peers =====
             sendPINToAllPeers(session);
         } else {
-            // ===== RELAY MODE: Upload và tạo PIN trên relay =====
+            // ===== RELAY MODE: Upload và tạo PIN trên relay (sync để đảm bảo PIN được tạo) =====
             if (relayClient != null) {
-                uploadAndCreatePINOnRelay(session, fileInfo, expiryMillis);
+                // Upload synchronously để PIN có thể được tìm thấy ngay
+                uploadAndCreatePINOnRelaySync(session, fileInfo, expiryMillis);
             } else {
                 System.err.println("⚠ Relay client chưa được kích hoạt!");
             }
@@ -154,68 +155,58 @@ public class PINCodeService {
     }
     
     /**
-     * Upload file lên relay rồi tạo PIN (async)
+     * Upload file lên relay rồi tạo PIN (SYNC - đợi hoàn thành)
      */
-    private void uploadAndCreatePINOnRelay(ShareSession session, FileInfo fileInfo, long expiryMillis) {
-        new Thread(() -> {
-            try {
-                // Nếu file đã có relayFileInfo thì dùng luôn
-                if (fileInfo.getRelayFileInfo() != null) {
-                    sendPINToRelay(session, expiryMillis);
-                    return;
-                }
-                
-                // Upload file lên relay trước
-                java.io.File file = new java.io.File(fileInfo.getFilePath());
-                if (!file.exists()) {
-                    System.err.println("❌ File không tồn tại: " + fileInfo.getFilePath());
-                    return;
-                }
-                
-                System.out.println("📤 Upload file lên relay để tạo PIN: " + fileInfo.getFileName());
-                
-                org.example.p2psharefile.model.RelayUploadRequest request = 
-                    new org.example.p2psharefile.model.RelayUploadRequest(
-                        localPeer.getPeerId(),
-                        localPeer.getDisplayName(),
-                        fileInfo.getFileName(),
-                        file.length(),
-                        fileInfo.getChecksum()
-                    );
-                
-                org.example.p2psharefile.model.RelayFileInfo relayFileInfo = 
-                    relayClient.uploadFile(file, request, new org.example.p2psharefile.network.RelayClient.RelayTransferListener() {
-                        @Override
-                        public void onProgress(org.example.p2psharefile.model.RelayTransferProgress progress) {
-                            // Progress
-                        }
-                        
-                        @Override
-                        public void onComplete(org.example.p2psharefile.model.RelayFileInfo info) {
-                            System.out.println("✅ Upload xong, đang tạo PIN trên relay...");
-                        }
-                        
-                        @Override
-                        public void onError(Exception e) {
-                            System.err.println("❌ Upload thất bại: " + e.getMessage());
-                        }
-                    });
-                
-                if (relayFileInfo != null) {
-                    // Lưu relayFileInfo vào fileInfo
-                    fileInfo.setRelayFileInfo(relayFileInfo);
-                    
-                    // Đăng ký file để search được
-                    relayClient.registerFileForSearch(relayFileInfo);
-                    
-                    // Tạo PIN trên relay
-                    sendPINToRelay(session, expiryMillis);
-                }
-                
-            } catch (Exception e) {
-                System.err.println("❌ Lỗi upload/create PIN: " + e.getMessage());
+    private void uploadAndCreatePINOnRelaySync(ShareSession session, FileInfo fileInfo, long expiryMillis) {
+        try {
+            // Nếu file đã có relayFileInfo thì dùng luôn
+            if (fileInfo.getRelayFileInfo() != null) {
+                System.out.println("📌 File đã có trên relay, tạo PIN ngay...");
+                sendPINToRelay(session, expiryMillis);
+                return;
             }
-        }, "PINUpload-" + fileInfo.getFileName()).start();
+            
+            // Upload file lên relay trước
+            java.io.File file = new java.io.File(fileInfo.getFilePath());
+            if (!file.exists()) {
+                System.err.println("❌ File không tồn tại: " + fileInfo.getFilePath());
+                return;
+            }
+            
+            System.out.println("📤 Upload file lên relay để tạo PIN: " + fileInfo.getFileName());
+            
+            org.example.p2psharefile.model.RelayUploadRequest request = 
+                new org.example.p2psharefile.model.RelayUploadRequest(
+                    localPeer.getPeerId(),
+                    localPeer.getDisplayName(),
+                    fileInfo.getFileName(),
+                    file.length(),
+                    fileInfo.getChecksum()
+                );
+            
+            // Upload SYNC (không dùng listener callback)
+            org.example.p2psharefile.model.RelayFileInfo relayFileInfo = 
+                relayClient.uploadFile(file, request, null);
+            
+            if (relayFileInfo != null) {
+                System.out.println("✅ Upload xong: " + relayFileInfo.getUploadId());
+                
+                // Lưu relayFileInfo vào fileInfo
+                fileInfo.setRelayFileInfo(relayFileInfo);
+                
+                // Đăng ký file để search được
+                relayClient.registerFileForSearch(relayFileInfo);
+                
+                // Tạo PIN trên relay
+                sendPINToRelay(session, expiryMillis);
+            } else {
+                System.err.println("❌ Upload thất bại, không thể tạo PIN trên relay");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi upload/create PIN: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     /**

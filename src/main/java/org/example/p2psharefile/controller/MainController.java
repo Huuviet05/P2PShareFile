@@ -142,14 +142,8 @@ public class MainController implements P2PService.P2PServiceListener {
                 // Download: luôn enable nếu có selection và service ready
                 downloadButton.setDisable(!hasSelection || !isServiceReady);
                 
-                // Preview: chỉ enable trong P2P mode và không phải relay peer
-                if (hasSelection && isServiceReady && isP2PMode) {
-                    // Kiểm tra xem peer có phải relay không
-                    boolean isRelayPeer = "relay".equals(newValue.getPeerInfo().getIpAddress());
-                    previewButton.setDisable(isRelayPeer);
-                } else {
-                    previewButton.setDisable(true);
-                }
+                // Preview: luôn enable nếu có selection (relay sẽ hiển thị info dialog)
+                previewButton.setDisable(!hasSelection || !isServiceReady);
             }
         );
         
@@ -476,11 +470,9 @@ public class MainController implements P2PService.P2PServiceListener {
         FileInfo fileInfo = selected.getFileInfo();
         PeerInfo peerInfo = selected.getPeerInfo();
         
-        // Kiểm tra nếu peer là relay -> không hỗ trợ preview
+        // Kiểm tra nếu peer là relay -> hiển thị thông tin cơ bản
         if ("relay".equals(peerInfo.getIpAddress())) {
-            showWarning("Không hỗ trợ Preview", 
-                "File từ Relay server không hỗ trợ xem trước.\n" +
-                "Vui lòng download file về để xem.");
+            showRelayFileInfoDialog(fileInfo, peerInfo);
             return;
         }
         
@@ -829,6 +821,59 @@ public class MainController implements P2PService.P2PServiceListener {
     }
     
     /**
+     * Hiển thị dialog thông tin file từ Relay (khi không có preview trực tiếp)
+     */
+    private void showRelayFileInfoDialog(FileInfo fileInfo, PeerInfo peerInfo) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Thông tin File - " + fileInfo.getFileName());
+        dialog.setHeaderText("📡 File từ Relay Server");
+        
+        VBox content = new VBox(12);
+        content.setPadding(new javafx.geometry.Insets(20));
+        content.setStyle("-fx-background-color: white;");
+        
+        // Header
+        Label headerLabel = new Label("📋 Thông tin file từ Relay Server");
+        headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #3b82f6;");
+        content.getChildren().add(headerLabel);
+        
+        // File info
+        VBox infoBox = new VBox(8);
+        infoBox.setStyle("-fx-padding: 15; -fx-background-color: #f0f4f8; -fx-background-radius: 8;");
+        
+        infoBox.getChildren().addAll(
+            new Label("📄 Tên file: " + fileInfo.getFileName()),
+            new Label("📊 Kích thước: " + fileInfo.getFormattedSize()),
+            new Label("👤 Người chia sẻ: " + peerInfo.getDisplayName())
+        );
+        
+        if (fileInfo.getFileHash() != null && !fileInfo.getFileHash().isEmpty()) {
+            String shortHash = fileInfo.getFileHash().length() > 16 
+                ? fileInfo.getFileHash().substring(0, 16) + "..." 
+                : fileInfo.getFileHash();
+            infoBox.getChildren().add(new Label("🔐 Hash: " + shortHash));
+        }
+        
+        content.getChildren().add(infoBox);
+        
+        // Note
+        Label noteLabel = new Label(
+            "⚠️ Preview chi tiết không khả dụng cho file từ Relay Server.\n\n" +
+            "📥 Nhấn 'Tải về' để download file về máy và xem nội dung.\n\n" +
+            "💡 File được truyền an toàn qua HTTPS."
+        );
+        noteLabel.setWrapText(true);
+        noteLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666; -fx-padding: 10 0 0 0;");
+        content.getChildren().add(noteLabel);
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
+        dialog.getDialogPane().setPrefSize(450, 350);
+        
+        dialog.showAndWait();
+    }
+    
+    /**
      * Format bytes thành dạng dễ đọc
      */
     private String formatBytes(long bytes) {
@@ -961,41 +1006,66 @@ public class MainController implements P2PService.P2PServiceListener {
         File file = fileChooser.showOpenDialog(pinShareFileListView.getScene().getWindow());
         
         if (file != null) {
-            // Add to shared files first
+            // Add to shared files first (will upload to relay in background if in relay mode)
             p2pService.addSharedFile(file);
             refreshSharedFiles();
             
-            // Create PIN code for this file
-            try {
-                FileInfo fileInfo = new FileInfo(
+            // Tìm FileInfo đã được add (có thể có RelayFileInfo nếu upload xong)
+            FileInfo fileInfo = null;
+            for (FileInfo fi : p2pService.getSharedFiles()) {
+                if (fi.getFileName().equals(file.getName()) && 
+                    fi.getFilePath().equals(file.getAbsolutePath())) {
+                    fileInfo = fi;
+                    break;
+                }
+            }
+            
+            // Nếu không tìm thấy, tạo mới
+            if (fileInfo == null) {
+                fileInfo = new FileInfo(
                     file.getName(),
                     file.length(),
                     file.getAbsolutePath()
                 );
-                currentPINSession = p2pService.createSharePIN(fileInfo);
-                
-                if (currentPINSession != null) {
-                    // Display PIN in UI
-                    pinLabel.setText(currentPINSession.getPin());
-                    pinFileNameLabel.setText(fileInfo.getFileName());
-                    pinDisplayPanel.setVisible(true);
-                    
-                    // Start countdown timer
-                    startPINExpiryTimer();
-                    
-                    log("🔑 Đã tạo mã PIN: " + currentPINSession.getPin() + " cho file: " + fileInfo.getFileName());
-                        showInfo("Mã PIN đã được tạo!\n\n" +
-                            "Mã: " + currentPINSession.getPin() + "\n" +
-                            "File: " + fileInfo.getFileName() + "\n" +
-                            "Hết hạn sau: 10 phút\n\n" +
-                            "Mã này đã được gửi tới tất cả peers.");
-                } else {
-                    showError("Không thể tạo mã PIN");
-                }
-            } catch (Exception e) {
-                showError("Lỗi khi tạo mã PIN: " + e.getMessage());
-                log("❌ Lỗi tạo PIN: " + e.getMessage());
             }
+            
+            // Create PIN code for this file (trong background thread vì có thể phải upload lên relay)
+            final FileInfo finalFileInfo = fileInfo;
+            log("⏳ Đang tạo mã PIN" + (isP2PMode ? "" : " (đang upload lên relay...)"));
+            
+            new Thread(() -> {
+                try {
+                    ShareSession session = p2pService.createSharePIN(finalFileInfo);
+                    
+                    Platform.runLater(() -> {
+                        if (session != null) {
+                            currentPINSession = session;
+                            
+                            // Display PIN in UI
+                            pinLabel.setText(session.getPin());
+                            pinFileNameLabel.setText(finalFileInfo.getFileName());
+                            pinDisplayPanel.setVisible(true);
+                            
+                            // Start countdown timer
+                            startPINExpiryTimer();
+                            
+                            log("🔑 Đã tạo mã PIN: " + session.getPin() + " cho file: " + finalFileInfo.getFileName());
+                            showInfo("Mã PIN đã được tạo!\n\n" +
+                                "Mã: " + session.getPin() + "\n" +
+                                "File: " + finalFileInfo.getFileName() + "\n" +
+                                "Hết hạn sau: 10 phút\n\n" +
+                                (isP2PMode ? "Mã này đã được gửi tới tất cả peers." : "Mã này đã được lưu trên relay server."));
+                        } else {
+                            showError("Không thể tạo mã PIN");
+                        }
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        showError("Lỗi khi tạo mã PIN: " + e.getMessage());
+                        log("❌ Lỗi tạo PIN: " + e.getMessage());
+                    });
+                }
+            }, "CreatePIN-" + file.getName()).start();
         }
     }
     
@@ -1267,13 +1337,20 @@ public class MainController implements P2PService.P2PServiceListener {
     
     @Override
     public void onServiceStarted() {
-        updateStatus("Online", "#00b894");
+        // Không cập nhật statusLabel ở đây vì đã set theo mode (P2P/Relay)
+        // Chỉ log thông báo
         log("✅ Service đã khởi động");
     }
     
     @Override
     public void onServiceStopped() {
-        updateStatus("Disconnected", "#95a5a6");
+        Platform.runLater(() -> {
+            statusLabel.setText("Disconnected");
+            statusLabel.setStyle("-fx-text-fill: #95a5a6; -fx-font-weight: bold; -fx-font-size: 14;");
+            if (statusDot != null) {
+                statusDot.setStyle("-fx-text-fill: #95a5a6; -fx-font-size: 20;");
+            }
+        });
         log("🛑 Service đã dừng");
     }
 }

@@ -250,7 +250,7 @@ public class PeerDiscovery {
             try {
                 // Chỉ quét mạng nếu đang ở P2P mode
                 if (!p2pOnlyMode) {
-                    System.out.println("⏸️ Tạm dừng quét LAN (đang ở Relay mode)");
+                    // Relay mode: không quét LAN, chờ và kiểm tra lại
                     Thread.sleep(SCAN_INTERVAL);
                     continue;
                 }
