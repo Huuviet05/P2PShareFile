@@ -65,6 +65,10 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private TextField pinInputField;
     @FXML private Button receiveButton;
     
+    // Connection Mode Toggle
+    @FXML private ToggleButton p2pModeToggle;
+    @FXML private ToggleButton relayModeToggle;
+    
     // ========== Data ==========
     
     private P2PService p2pService;
@@ -74,6 +78,9 @@ public class MainController implements P2PService.P2PServiceListener {
     private ObservableList<SearchResultItem> searchResults;
     
     private String downloadDirectory = System.getProperty("user.home") + "/Downloads/";
+    
+    // Connection Mode: true = P2P only, false = Relay only
+    private boolean isP2PMode = true;
     
     // PIN-related
     private ShareSession currentPINSession = null;
@@ -139,6 +146,9 @@ public class MainController implements P2PService.P2PServiceListener {
                 downloadButton.setDisable(!hasSelection || p2pService == null);
             }
         );
+        
+        // Setup connection mode toggle buttons
+        setupConnectionModeToggle();
         
         log("📱 Ứng dụng P2P Share File đã sẵn sàng!");
         log("📁 Thư mục download mặc định: " + downloadDirectory);
@@ -233,6 +243,68 @@ public class MainController implements P2PService.P2PServiceListener {
         peerCountLabel.setText("0");
         
         log("🛑 Đã dừng P2P Service");
+    }
+    
+    /**
+     * Setup connection mode toggle buttons
+     */
+    private void setupConnectionModeToggle() {
+        if (p2pModeToggle == null || relayModeToggle == null) {
+            return; // Buttons chưa được inject
+        }
+        
+        // Tạo toggle group để chỉ 1 button được chọn
+        javafx.scene.control.ToggleGroup modeGroup = new javafx.scene.control.ToggleGroup();
+        p2pModeToggle.setToggleGroup(modeGroup);
+        relayModeToggle.setToggleGroup(modeGroup);
+        
+        // Default: P2P mode
+        p2pModeToggle.setSelected(true);
+        isP2PMode = true;
+        
+        // P2P mode handler
+        p2pModeToggle.setOnAction(e -> {
+            if (p2pModeToggle.isSelected()) {
+                isP2PMode = true;
+                log("🔒 Chế độ: P2P (Bảo mật cao - Mạng LAN)");
+                updateModeUI();
+            } else {
+                // Đảm bảo luôn có 1 mode được chọn
+                p2pModeToggle.setSelected(true);
+            }
+        });
+        
+        // Relay mode handler
+        relayModeToggle.setOnAction(e -> {
+            if (relayModeToggle.isSelected()) {
+                isP2PMode = false;
+                log("🌐 Chế độ: Relay (Kết nối Internet)");
+                updateModeUI();
+            } else {
+                // Đảm bảo luôn có 1 mode được chọn
+                relayModeToggle.setSelected(true);
+            }
+        });
+    }
+    
+    /**
+     * Cập nhật UI dựa trên mode hiện tại
+     */
+    private void updateModeUI() {
+        if (isP2PMode) {
+            // P2P mode: Preview enabled, search only LAN
+            statusLabel.setText("P2P Mode");
+        } else {
+            // Relay mode: Preview disabled, search qua relay
+            statusLabel.setText("Relay Mode");
+        }
+    }
+    
+    /**
+     * Kiểm tra có phải đang ở P2P mode không
+     */
+    public boolean isP2PMode() {
+        return isP2PMode;
     }
     
     /**
@@ -341,6 +413,14 @@ public class MainController implements P2PService.P2PServiceListener {
         
         FileInfo fileInfo = selected.getFileInfo();
         PeerInfo peerInfo = selected.getPeerInfo();
+        
+        // Kiểm tra nếu peer là relay -> không hỗ trợ preview
+        if ("relay".equals(peerInfo.getIpAddress())) {
+            showWarning("Không hỗ trợ Preview", 
+                "File từ Relay server không hỗ trợ xem trước.\n" +
+                "Vui lòng download file về để xem.");
+            return;
+        }
         
         // Disable button tạm thời
         previewButton.setDisable(true);

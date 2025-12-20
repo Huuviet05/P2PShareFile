@@ -760,3 +760,44 @@
 	-fx-font-weight: bold;
 	-fx-text-fill: #1f2937;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   CONNECTION MODE TOGGLE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.mode-toggle-box {
+	-fx-background-color: #374151;
+	-fx-background-radius: 8;
+	-fx-padding: 4 10;
+	-fx-spacing: 6;
+}
+
+.mode-icon {
+	-fx-font-size: 14;
+	-fx-text-fill: #9ca3af;
+}
+
+.mode-toggle-btn {
+	-fx-background-color: transparent;
+	-fx-text-fill: #9ca3af;
+	-fx-font-size: 11;
+	-fx-font-weight: 600;
+	-fx-padding: 4 12;
+	-fx-background-radius: 6;
+	-fx-cursor: hand;
+	-fx-border-color: transparent;
+}
+
+.mode-toggle-btn:selected {
+	-fx-background-color: #3b82f6;
+	-fx-text-fill: white;
+}
+
+.mode-toggle-btn:hover {
+	-fx-background-color: #4b5563;
+	-fx-text-fill: white;
+}
+
+.mode-toggle-btn:selected:hover {
+	-fx-background-color: #2563eb;
+}

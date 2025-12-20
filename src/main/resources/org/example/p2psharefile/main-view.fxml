@@ -29,6 +29,13 @@
             
             <Region HBox.hgrow="ALWAYS"/>
             
+            <!-- Connection Mode Toggle -->
+            <HBox spacing="8" alignment="CENTER" styleClass="mode-toggle-box">
+                <Label text="🔒" styleClass="mode-icon"/>
+                <ToggleButton fx:id="p2pModeToggle" text="P2P" styleClass="mode-toggle-btn" selected="true"/>
+                <ToggleButton fx:id="relayModeToggle" text="Relay" styleClass="mode-toggle-btn"/>
+            </HBox>
+            
             <!-- Status Pills -->
             <HBox spacing="10" alignment="CENTER_RIGHT">
                 <HBox spacing="6" alignment="CENTER" styleClass="status-pill">
