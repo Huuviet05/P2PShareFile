@@ -285,33 +285,16 @@ public class P2PService {
             System.out.println("\n[5/6] Gửi signed JOIN announcement...");
             peerDiscovery.sendJoinAnnouncement();
             
-            // ⭐ BƯỚC 6: Đăng ký với relay server (nếu relay đã enable)
+            // ⭐ BƯỚC 6: Đăng ký với relay server (chỉ đăng ký, KHÔNG discover peers ngay)
+            // Việc discover peers qua relay sẽ được thực hiện khi chuyển sang Relay mode
             if (fileTransferService.isRelayEnabled()) {
-                System.out.println("\n[6/6] Đăng ký peer với relay server (Internet discovery)...");
+                System.out.println("\n[6/6] Đăng ký peer với relay server...");
                 RelayClient relayClient = fileTransferService.getRelayClient();
                 if (relayClient != null) {
                     boolean registered = relayClient.registerPeer(localPeer);
                     if (registered) {
-                        System.out.println("✓ Đã đăng ký với relay server");
-                        
-                        // Discover peers qua relay (fallback nếu LAN không có)
-                        new Thread(() -> {
-                            try {
-                                Thread.sleep(2000); // Đợi LAN scan xong
-                                List<PeerInfo> relayPeers = relayClient.discoverPeers(localPeer.getPeerId());
-                                for (PeerInfo peer : relayPeers) {
-                                    peerDiscovery.addDiscoveredPeer(peer);
-                                    notifyPeerDiscovered(peer);
-                                }
-                                if (!relayPeers.isEmpty()) {
-                                    System.out.println("🌐 Đã phát hiện " + relayPeers.size() + " peer(s) qua Internet");
-                                }
-                            } catch (Exception e) {
-                                System.err.println("Lỗi discover peers qua relay: " + e.getMessage());
-                            }
-                        }, "RelayDiscovery").start();
-                        
-                        // Heartbeat định kỳ
+                        System.out.println("✓ Đã đăng ký với relay server (sẵn sàng cho Relay mode)");
+                        // Heartbeat định kỳ để duy trì kết nối
                         startRelayHeartbeat(relayClient);
                     }
                 }
@@ -816,11 +799,35 @@ public class P2PService {
         System.out.println("\n🔧 ========== CHUYỂN CHẾ ĐỘ KẾT NỐI ==========");
         System.out.println("   Mode: " + (p2pOnly ? "P2P (Mạng LAN - Bảo mật cao)" : "Relay (Internet - Kết nối mọi nơi)"));
         
+        // Set mode cho PeerDiscovery
+        peerDiscovery.setP2POnlyMode(p2pOnly);
+        
         // Set mode cho FileSearchService
         fileSearchService.setP2POnlyMode(p2pOnly);
         
         // Set mode cho PINCodeService
         pinCodeService.setP2POnlyMode(p2pOnly);
+        
+        // Nếu chuyển sang Relay mode, trigger discover peers qua relay
+        if (!p2pOnly && fileTransferService.isRelayEnabled()) {
+            RelayClient relayClient = fileTransferService.getRelayClient();
+            if (relayClient != null) {
+                new Thread(() -> {
+                    try {
+                        List<PeerInfo> relayPeers = relayClient.discoverPeers(localPeer.getPeerId());
+                        for (PeerInfo peer : relayPeers) {
+                            peerDiscovery.addDiscoveredPeer(peer);
+                            notifyPeerDiscovered(peer);
+                        }
+                        if (!relayPeers.isEmpty()) {
+                            System.out.println("🌐 Đã phát hiện " + relayPeers.size() + " peer(s) qua Internet");
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Lỗi discover peers qua relay: " + e.getMessage());
+                    }
+                }, "RelayDiscoveryOnModeSwitch").start();
+            }
+        }
         
         System.out.println("✅ Đã chuyển chế độ kết nối thành công!");
         System.out.println("================================================\n");
@@ -832,6 +839,7 @@ public class P2PService {
     public boolean isP2POnlyMode() {
         return fileSearchService.isP2POnlyMode();
     }
+
 
     private void notifyTransferError(String fileName, Exception e) {
         for (P2PServiceListener listener : listeners) {

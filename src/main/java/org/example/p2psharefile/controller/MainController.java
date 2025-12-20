@@ -5,23 +5,18 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import org.example.p2psharefile.model.*;
 import org.example.p2psharefile.service.P2PService;
-import org.example.p2psharefile.service.PINCodeService;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Module 8: MainController - Controller cho giao diện chính
@@ -38,7 +33,7 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private Label statusDot;
     @FXML private Label peerCountLabel;
     
-    // Tab 1: Code (Quick Share) - không cần displayNameField, portField, startButton, stopButton
+    // Tab 1: Peers List
     @FXML private ListView<PeerInfo> peerListView;
     
     // Tab 2: Chia sẻ file
@@ -142,13 +137,31 @@ public class MainController implements P2PService.P2PServiceListener {
         searchResultsListView.getSelectionModel().selectedItemProperty().addListener(
             (observable, oldValue, newValue) -> {
                 boolean hasSelection = newValue != null;
-                previewButton.setDisable(!hasSelection || p2pService == null);
-                downloadButton.setDisable(!hasSelection || p2pService == null);
+                boolean isServiceReady = p2pService != null;
+                
+                // Download: luôn enable nếu có selection và service ready
+                downloadButton.setDisable(!hasSelection || !isServiceReady);
+                
+                // Preview: chỉ enable trong P2P mode và không phải relay peer
+                if (hasSelection && isServiceReady && isP2PMode) {
+                    // Kiểm tra xem peer có phải relay không
+                    boolean isRelayPeer = "relay".equals(newValue.getPeerInfo().getIpAddress());
+                    previewButton.setDisable(isRelayPeer);
+                } else {
+                    previewButton.setDisable(true);
+                }
             }
         );
         
         // Setup connection mode toggle buttons
         setupConnectionModeToggle();
+        
+        // Set default status label to P2P Mode (LAN)
+        statusLabel.setText("P2P Mode (LAN)");
+        statusLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold; -fx-font-size: 14;");
+        if (statusDot != null) {
+            statusDot.setStyle("-fx-text-fill: #10b981; -fx-font-size: 20;");
+        }
         
         log("📱 Ứng dụng P2P Share File đã sẵn sàng!");
         log("📁 Thư mục download mặc định: " + downloadDirectory);
@@ -199,18 +212,9 @@ public class MainController implements P2PService.P2PServiceListener {
     }
     
     /**
-     * Xử lý khi nhấn nút Start (giữ lại để tương thích, nhưng không sử dụng trong UI mới)
+     * Xử lý khi dừng ứng dụng (có thể gọi từ menu hoặc window close)
      */
-    @FXML
-    private void handleStart() {
-        // Đã tự động kết nối khi khởi động, không cần xử lý
-    }
-    
-    /**
-     * Xử lý khi nhấn nút Stop (giữ lại để tương thích, nhưng không sử dụng trong UI mới)
-     */
-    @FXML
-    private void handleStop() {
+    public void handleStop() {
         if (p2pService != null) {
             p2pService.stop();
             p2pService = null;
@@ -326,6 +330,11 @@ public class MainController implements P2PService.P2PServiceListener {
      */
     private void updateModeUI() {
         Platform.runLater(() -> {
+            // Xóa danh sách peers và search results khi chuyển mode
+            peerList.clear();
+            searchResults.clear();
+            peerCountLabel.setText("0 Peers");
+            
             if (isP2PMode) {
                 // P2P mode: Preview enabled, search only LAN
                 statusLabel.setText("P2P Mode (LAN)");
@@ -333,9 +342,10 @@ public class MainController implements P2PService.P2PServiceListener {
                 if (statusDot != null) {
                     statusDot.setStyle("-fx-text-fill: #10b981; -fx-font-size: 20;");
                 }
-                // Enable preview button
+                // Enable preview button khi có file selected
                 if (previewButton != null) {
-                    previewButton.setDisable(false);
+                    SearchResultItem selected = searchResultsListView.getSelectionModel().getSelectedItem();
+                    previewButton.setDisable(selected == null);
                 }
             } else {
                 // Relay mode: Preview disabled, search qua relay
@@ -344,7 +354,10 @@ public class MainController implements P2PService.P2PServiceListener {
                 if (statusDot != null) {
                     statusDot.setStyle("-fx-text-fill: #3b82f6; -fx-font-size: 20;");
                 }
-                // Preview không khả dụng trong relay mode (có thể disable)
+                // Disable preview button trong Relay mode
+                if (previewButton != null) {
+                    previewButton.setDisable(true);
+                }
             }
         });
     }

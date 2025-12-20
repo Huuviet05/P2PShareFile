@@ -44,6 +44,9 @@ public class PeerDiscovery {
     private SSLServerSocket serverSocket;
     private ExecutorService executorService;
     private volatile boolean running = false;
+    
+    // Mode: true = P2P only (LAN scan), false = Relay only (no LAN scan)
+    private volatile boolean p2pOnlyMode = true;
 
     public interface PeerDiscoveryListener {
         void onPeerDiscovered(PeerInfo peer);
@@ -240,10 +243,18 @@ public class PeerDiscovery {
 
     /**
      * Quét mạng LAN để tìm peer
+     * Chỉ quét khi ở P2P Mode (LAN)
      */
     private void scanNetwork() {
         while (running) {
             try {
+                // Chỉ quét mạng nếu đang ở P2P mode
+                if (!p2pOnlyMode) {
+                    System.out.println("⏸️ Tạm dừng quét LAN (đang ở Relay mode)");
+                    Thread.sleep(SCAN_INTERVAL);
+                    continue;
+                }
+                
                 String baseIP = getBaseIP(localPeer.getIpAddress());
                 System.out.println("🔍 Quét mạng: " + baseIP + ".*");
 
@@ -601,6 +612,84 @@ public class PeerDiscovery {
             } catch (Exception e) {
                 System.err.println("Lỗi listener: " + e.getMessage());
             }
+        }
+    }
+
+    // ========== Mode Switching ==========
+    
+    /**
+     * Set connection mode
+     * @param p2pOnly true = P2P only (LAN scan), false = Relay only (no LAN scan)
+     */
+    public void setP2POnlyMode(boolean p2pOnly) {
+        boolean previousMode = this.p2pOnlyMode;
+        this.p2pOnlyMode = p2pOnly;
+        
+        System.out.println("🔧 PeerDiscovery mode: " + (p2pOnly ? "P2P (LAN)" : "Relay (Internet)"));
+        
+        if (previousMode != p2pOnly) {
+            // Clear discovered peers when switching modes
+            for (PeerInfo peer : new ArrayList<>(discoveredPeers.values())) {
+                notifyPeerLost(peer);
+            }
+            discoveredPeers.clear();
+            peerConnections.clear();
+            
+            System.out.println("🔄 Đã xóa danh sách peers khi chuyển mode");
+        }
+    }
+    
+    /**
+     * Kiểm tra mode hiện tại
+     */
+    public boolean isP2POnlyMode() {
+        return p2pOnlyMode;
+    }
+    
+    /**
+     * Lấy peers theo mode hiện tại
+     * P2P Mode: Chỉ lấy LAN peers (private IPs)
+     * Relay Mode: Lấy tất cả peers (bao gồm relay peers)
+     */
+    public List<PeerInfo> getFilteredPeers() {
+        if (p2pOnlyMode) {
+            // P2P Mode: Chỉ lấy LAN peers
+            List<PeerInfo> lanPeers = new ArrayList<>();
+            for (PeerInfo peer : discoveredPeers.values()) {
+                if (isPrivateIP(peer.getIpAddress())) {
+                    lanPeers.add(peer);
+                }
+            }
+            return lanPeers;
+        } else {
+            // Relay Mode: Lấy tất cả
+            return new ArrayList<>(discoveredPeers.values());
+        }
+    }
+    
+    /**
+     * Kiểm tra IP có phải private (LAN) không
+     */
+    private boolean isPrivateIP(String ip) {
+        if (ip == null) return false;
+        if ("relay".equals(ip)) return false;
+        
+        String[] parts = ip.split("\\.");
+        if (parts.length != 4) return false;
+        
+        try {
+            int first = Integer.parseInt(parts[0]);
+            int second = Integer.parseInt(parts[1]);
+            
+            // Private IP ranges
+            if (first == 10) return true;                           // 10.0.0.0/8
+            if (first == 172 && second >= 16 && second <= 31) return true; // 172.16.0.0/12
+            if (first == 192 && second == 168) return true;         // 192.168.0.0/16
+            if (first == 127) return true;                          // Localhost
+            
+            return false;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 
