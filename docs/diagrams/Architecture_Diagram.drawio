@@ -1,0 +1,195 @@
+<mxfile host="app.diagrams.net" modified="2025-12-21T00:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="architecture-p2pshare" name="Architecture Diagram">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Title -->
+        <mxCell id="title" value="Kiến trúc 5 lớp - P2PShareFile System" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="400" height="30" as="geometry"/>
+        </mxCell>
+        
+        <!-- Layer 1: Presentation Layer -->
+        <mxCell id="layer1-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="60" width="1000" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer1-label" value="TẦNG TRÌNH BÀY (Presentation Layer)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="65" width="300" height="20" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="main-view" value="main-view.fxml&#xa;(JavaFX FXML)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="130" y="95" width="120" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="styles-css" value="styles.css&#xa;(CSS Styles)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="270" y="95" width="120" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="main-controller" value="MainController.java&#xa;(UI Controller)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="410" y="95" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="main-app" value="MainApplication.java&#xa;(Entry Point)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="570" y="95" width="140" height="50" as="geometry"/>
+        </mxCell>
+        
+        <!-- Layer 2: Service Layer -->
+        <mxCell id="layer2-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="180" width="1000" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer2-label" value="TẦNG DỊCH VỤ (Service Layer)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="185" width="300" height="20" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="p2p-service" value="P2PService.java&#xa;(Facade Service)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="130" y="215" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="pin-service" value="PINCodeService.java&#xa;(PIN Management)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="280" y="215" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="preview-service" value="PreviewService.java&#xa;(File Preview)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="440" y="215" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="preview-cache" value="PreviewCacheService.java&#xa;(Preview Cache)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="590" y="215" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="preview-gen" value="PreviewGenerator.java&#xa;(Generate Preview)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="770" y="215" width="150" height="50" as="geometry"/>
+        </mxCell>
+        
+        <!-- Layer 3: Network Layer -->
+        <mxCell id="layer3-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="300" width="1000" height="120" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer3-label" value="TẦNG MẠNG (Network Layer)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="305" width="300" height="20" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="file-transfer" value="FileTransferService.java&#xa;(TLS Socket Transfer)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="130" y="335" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="file-search" value="FileSearchService.java&#xa;(File Search)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="310" y="335" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="peer-discovery" value="PeerDiscovery.java&#xa;(UDP Broadcast)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="470" y="335" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="relay-client" value="RelayClient.java&#xa;(HTTP Client)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="630" y="335" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="relay-config" value="RelayConfig.java&#xa;(Configuration)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="780" y="335" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="mode-label" value="P2P Mode (LAN)" style="text;html=1;strokeColor=none;fillColor=#d5e8d4;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="320" y="395" width="100" height="20" as="geometry"/>
+        </mxCell>
+        <mxCell id="mode-label2" value="Relay Mode (Internet)" style="text;html=1;strokeColor=none;fillColor=#f8cecc;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=10;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="680" y="395" width="130" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- Layer 4: Security Layer -->
+        <mxCell id="layer4-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="440" width="1000" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer4-label" value="TẦNG BẢO MẬT (Security Layer)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="445" width="300" height="20" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="security-mgr" value="SecurityManager.java&#xa;(TLS/Key Management)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="130" y="475" width="160" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="aes-encrypt" value="AESEncryption.java&#xa;(AES-GCM-256)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="310" y="475" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="file-hash" value="FileHashUtil.java&#xa;(SHA-256/MD5)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="470" y="475" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="file-compress" value="FileCompression.java&#xa;(GZIP Compression)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="620" y="475" width="150" height="50" as="geometry"/>
+        </mxCell>
+        
+        <!-- Layer 5: Data/Model Layer -->
+        <mxCell id="layer5-bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="560" width="1000" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="layer5-label" value="TẦNG DỮ LIỆU (Data/Model Layer)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="565" width="300" height="20" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="file-info" value="FileInfo.java" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="130" y="595" width="100" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="peer-info" value="PeerInfo.java" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="250" y="595" width="100" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="share-session" value="ShareSession.java" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="370" y="595" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="relay-file-info" value="RelayFileInfo.java" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="500" y="595" width="110" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="relay-progress" value="RelayTransferProgress.java" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="630" y="595" width="160" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="preview-manifest" value="PreviewManifest.java" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="810" y="595" width="130" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- External: Relay Server -->
+        <mxCell id="relay-server-box" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="100" y="680" width="500" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="relay-label" value="RELAY SERVER (Render.com)" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="110" y="685" width="300" height="20" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="relay-server" value="RelayServer.java&#xa;(HTTP Server)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="130" y="720" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="peer-registry" value="PeerRegistry.java&#xa;(Peer Management)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="280" y="720" width="140" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="relay-starter" value="RelayStarter.java&#xa;(Server Bootstrap)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="440" y="720" width="130" height="50" as="geometry"/>
+        </mxCell>
+        
+        <!-- Arrows between layers -->
+        <mxCell id="arrow1" value="" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="160" as="sourcePoint"/>
+            <mxPoint x="600" y="180" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow2" value="" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="280" as="sourcePoint"/>
+            <mxPoint x="600" y="300" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow3" value="" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="420" as="sourcePoint"/>
+            <mxPoint x="600" y="440" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="arrow4" value="" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="600" y="540" as="sourcePoint"/>
+            <mxPoint x="600" y="560" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Arrow to Relay Server -->
+        <mxCell id="arrow-relay" value="HTTP/HTTPS" style="endArrow=classic;startArrow=classic;html=1;strokeWidth=2;strokeColor=#d79b00;dashed=1;" edge="1" parent="1">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="700" y="390" as="sourcePoint"/>
+            <mxPoint x="350" y="680" as="targetPoint"/>
+            <Array as="points">
+              <mxPoint x="700" y="640"/>
+              <mxPoint x="350" y="640"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,246 @@
+<mxfile host="app.diagrams.net" modified="2025-12-21T00:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="class-diagram-p2pshare" name="Class Diagram">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Title -->
+        <mxCell id="title" value="Class Diagram - P2PShareFile Core Classes" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=18;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="20" width="400" height="30" as="geometry"/>
+        </mxCell>
+        
+        <!-- P2PService Class -->
+        <mxCell id="p2p-service" value="&lt;&lt;Facade&gt;&gt;&#xa;P2PService" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="50" y="80" width="280" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2p-attr" value="- sharedFiles: List&lt;FileInfo&gt;&#xa;- peers: List&lt;PeerInfo&gt;&#xa;- transferService: FileTransferService&#xa;- searchService: FileSearchService&#xa;- peerDiscovery: PeerDiscovery&#xa;- securityManager: SecurityManager" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="p2p-service">
+          <mxGeometry y="40" width="280" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2p-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="p2p-service">
+          <mxGeometry y="130" width="280" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="p2p-methods" value="+ addSharedFile(file: File): void&#xa;+ removeSharedFile(fileId: String): void&#xa;+ searchFiles(query: String): List&lt;FileInfo&gt;&#xa;+ downloadFile(fileId, peerId): void&#xa;+ switchMode(mode: Mode): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="p2p-service">
+          <mxGeometry y="138" width="280" height="62" as="geometry"/>
+        </mxCell>
+        
+        <!-- FileTransferService Class -->
+        <mxCell id="file-transfer" value="FileTransferService" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="380" y="80" width="280" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="ft-attr" value="- CHUNK_SIZE: int = 1048576 (1MB)&#xa;- sslContext: SSLContext&#xa;- activeTransfers: Map&lt;String, Transfer&gt;&#xa;- securityManager: SecurityManager&#xa;- relayClient: RelayClient" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="file-transfer">
+          <mxGeometry y="26" width="280" height="74" as="geometry"/>
+        </mxCell>
+        <mxCell id="ft-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="file-transfer">
+          <mxGeometry y="100" width="280" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="ft-methods" value="+ sendFile(file, peer, callback): void&#xa;+ receiveFile(host, port, fileInfo): void&#xa;+ sendChunk(out, data, hash): void&#xa;+ receiveChunk(in, expectedHash): byte[]&#xa;+ pauseTransfer(transferId): void&#xa;+ resumeTransfer(transferId): void&#xa;+ cancelTransfer(transferId): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="file-transfer">
+          <mxGeometry y="108" width="280" height="92" as="geometry"/>
+        </mxCell>
+        
+        <!-- RelayClient Class -->
+        <mxCell id="relay-client" value="RelayClient" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="710" y="80" width="280" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="rc-attr" value="- httpClient: HttpClient&#xa;- serverUrl: String&#xa;- currentUploadId: String&#xa;- transferProgress: RelayTransferProgress&#xa;- TIMEOUT: Duration = 30s" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="relay-client">
+          <mxGeometry y="26" width="280" height="74" as="geometry"/>
+        </mxCell>
+        <mxCell id="rc-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="relay-client">
+          <mxGeometry y="100" width="280" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="rc-methods" value="+ uploadFile(file, callback): String&#xa;+ downloadFile(fileId, destPath): void&#xa;+ createPIN(fileId): String&#xa;+ findPIN(pin): RelayFileInfo&#xa;+ uploadChunks(file, uploadId): void&#xa;+ downloadWithRange(fileId, start, end): byte[]" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="relay-client">
+          <mxGeometry y="108" width="280" height="92" as="geometry"/>
+        </mxCell>
+        
+        <!-- SecurityManager Class -->
+        <mxCell id="security-mgr" value="SecurityManager" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="80" width="260" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="sm-attr" value="- keyPair: KeyPair (ECDSA)&#xa;- sslContext: SSLContext&#xa;- trustStore: KeyStore&#xa;- instanceId: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="security-mgr">
+          <mxGeometry y="26" width="260" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="sm-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="security-mgr">
+          <mxGeometry y="90" width="260" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="sm-methods" value="+ createSSLContext(): SSLContext&#xa;+ signData(data: byte[]): byte[]&#xa;+ verifySignature(data, sig, pub): boolean&#xa;+ createSSLServerSocket(port): SSLServerSocket&#xa;+ createSSLSocket(host, port): SSLSocket&#xa;+ getPublicKey(): PublicKey" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="security-mgr">
+          <mxGeometry y="98" width="260" height="102" as="geometry"/>
+        </mxCell>
+        
+        <!-- FileInfo Class -->
+        <mxCell id="file-info" value="FileInfo" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="50" y="320" width="220" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="fi-attr" value="- fileId: String&#xa;- fileName: String&#xa;- filePath: String&#xa;- fileSize: long&#xa;- hash: String (SHA-256)&#xa;- ownerId: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="file-info">
+          <mxGeometry y="26" width="220" height="94" as="geometry"/>
+        </mxCell>
+        <mxCell id="fi-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="file-info">
+          <mxGeometry y="120" width="220" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="fi-methods" value="+ getFormattedSize(): String&#xa;+ getFileExtension(): String&#xa;+ toJson(): String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="file-info">
+          <mxGeometry y="128" width="220" height="52" as="geometry"/>
+        </mxCell>
+        
+        <!-- PeerInfo Class -->
+        <mxCell id="peer-info" value="PeerInfo" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="300" y="320" width="220" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="pi-attr" value="- peerId: String&#xa;- displayName: String&#xa;- ipAddress: String&#xa;- port: int&#xa;- publicKey: PublicKey&#xa;- lastSeen: Instant" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="peer-info">
+          <mxGeometry y="26" width="220" height="94" as="geometry"/>
+        </mxCell>
+        <mxCell id="pi-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="peer-info">
+          <mxGeometry y="120" width="220" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="pi-methods" value="+ isOnline(): boolean&#xa;+ getAddress(): String&#xa;+ toJson(): String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="peer-info">
+          <mxGeometry y="128" width="220" height="52" as="geometry"/>
+        </mxCell>
+        
+        <!-- ShareSession Class -->
+        <mxCell id="share-session" value="ShareSession" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="550" y="320" width="230" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="ss-attr" value="- sessionId: String&#xa;- pinCode: String (6 digits)&#xa;- fileInfo: FileInfo&#xa;- createdAt: Instant&#xa;- expiresAt: Instant&#xa;- state: SessionState" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="share-session">
+          <mxGeometry y="26" width="230" height="94" as="geometry"/>
+        </mxCell>
+        <mxCell id="ss-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="share-session">
+          <mxGeometry y="120" width="230" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="ss-methods" value="+ isExpired(): boolean&#xa;+ getRemainingTime(): Duration&#xa;+ cancel(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="share-session">
+          <mxGeometry y="128" width="230" height="52" as="geometry"/>
+        </mxCell>
+        
+        <!-- RelayTransferProgress Class -->
+        <mxCell id="relay-progress" value="RelayTransferProgress" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="810" y="320" width="240" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="rp-attr" value="- uploadId: String&#xa;- currentChunk: int&#xa;- totalChunks: int&#xa;- status: TransferStatus&#xa;- resumeToken: String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="relay-progress">
+          <mxGeometry y="26" width="240" height="84" as="geometry"/>
+        </mxCell>
+        <mxCell id="rp-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="relay-progress">
+          <mxGeometry y="110" width="240" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="rp-methods" value="+ getProgressPercent(): double&#xa;+ canResume(): boolean&#xa;+ updateProgress(chunk): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="relay-progress">
+          <mxGeometry y="118" width="240" height="62" as="geometry"/>
+        </mxCell>
+        
+        <!-- TransferStatus Enum -->
+        <mxCell id="transfer-status" value="&lt;&lt;enumeration&gt;&gt;&#xa;TransferStatus" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=40;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="320" width="160" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="ts-values" value="PENDING&#xa;IN_PROGRESS&#xa;PAUSED&#xa;COMPLETED&#xa;FAILED&#xa;CANCELLED" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;fontStyle=1;" vertex="1" parent="transfer-status">
+          <mxGeometry y="40" width="160" height="90" as="geometry"/>
+        </mxCell>
+        
+        <!-- RelayServer Class -->
+        <mxCell id="relay-server" value="RelayServer" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="50" y="540" width="280" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs-attr" value="- httpServer: HttpServer&#xa;- peerRegistry: PeerRegistry&#xa;- uploadedFiles: Map&lt;String, File&gt;&#xa;- pinCodes: Map&lt;String, FileInfo&gt;&#xa;- executor: ExecutorService" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="relay-server">
+          <mxGeometry y="26" width="280" height="74" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="relay-server">
+          <mxGeometry y="100" width="280" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="rs-methods" value="+ start(port: int): void&#xa;+ stop(): void&#xa;- handleUpload(exchange): void&#xa;- handleDownload(exchange): void&#xa;- handlePinCreate(exchange): void&#xa;- handlePinFind(exchange): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="relay-server">
+          <mxGeometry y="108" width="280" height="92" as="geometry"/>
+        </mxCell>
+        
+        <!-- PeerRegistry Class -->
+        <mxCell id="peer-registry" value="PeerRegistry" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="360" y="540" width="260" height="200" as="geometry"/>
+        </mxCell>
+        <mxCell id="pr-attr" value="- peers: Map&lt;String, PeerInfo&gt;&#xa;- files: Map&lt;String, List&lt;FileInfo&gt;&gt;&#xa;- cleanupScheduler: ScheduledExecutor&#xa;- PEER_TIMEOUT: Duration = 5min" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="peer-registry">
+          <mxGeometry y="26" width="260" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="pr-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="peer-registry">
+          <mxGeometry y="90" width="260" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="pr-methods" value="+ registerPeer(peerInfo): void&#xa;+ unregisterPeer(peerId): void&#xa;+ getPeer(peerId): PeerInfo&#xa;+ getAllPeers(): List&lt;PeerInfo&gt;&#xa;+ registerFiles(peerId, files): void&#xa;+ searchFiles(query): List&lt;FileInfo&gt;&#xa;- cleanupStale(): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="peer-registry">
+          <mxGeometry y="98" width="260" height="102" as="geometry"/>
+        </mxCell>
+        
+        <!-- PeerDiscovery Class -->
+        <mxCell id="peer-discovery" value="PeerDiscovery" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="650" y="540" width="260" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="pd-attr" value="- broadcastSocket: DatagramSocket&#xa;- BROADCAST_PORT: int = 9999&#xa;- discoveredPeers: List&lt;PeerInfo&gt;&#xa;- running: AtomicBoolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="peer-discovery">
+          <mxGeometry y="26" width="260" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="pd-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="peer-discovery">
+          <mxGeometry y="90" width="260" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="pd-methods" value="+ startDiscovery(): void&#xa;+ stopDiscovery(): void&#xa;+ broadcastPresence(): void&#xa;- listenForPeers(): void&#xa;+ getDiscoveredPeers(): List&lt;PeerInfo&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="peer-discovery">
+          <mxGeometry y="98" width="260" height="82" as="geometry"/>
+        </mxCell>
+        
+        <!-- AESEncryption Class -->
+        <mxCell id="aes-encrypt" value="AESEncryption" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=0;marginBottom=0;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="940" y="540" width="260" height="160" as="geometry"/>
+        </mxCell>
+        <mxCell id="aes-attr" value="- KEY_SIZE: int = 256&#xa;- GCM_TAG_LENGTH: int = 128&#xa;- ALGORITHM: String = &quot;AES/GCM/NoPadding&quot;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="aes-encrypt">
+          <mxGeometry y="26" width="260" height="54" as="geometry"/>
+        </mxCell>
+        <mxCell id="aes-sep" value="" style="line;strokeWidth=1;fillColor=none;align=left;verticalAlign=middle;spacingTop=-1;spacingLeft=3;spacingRight=3;rotatable=0;labelPosition=right;points=[];portConstraint=eastwest;" vertex="1" parent="aes-encrypt">
+          <mxGeometry y="80" width="260" height="8" as="geometry"/>
+        </mxCell>
+        <mxCell id="aes-methods" value="+ generateKey(): SecretKey&#xa;+ encrypt(data, key): byte[]&#xa;+ decrypt(encrypted, key): byte[]&#xa;+ encryptFile(src, dest, key): void&#xa;+ decryptFile(src, dest, key): void" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="aes-encrypt">
+          <mxGeometry y="88" width="260" height="72" as="geometry"/>
+        </mxCell>
+        
+        <!-- Relationships -->
+        <!-- P2PService -> FileTransferService -->
+        <mxCell id="rel1" value="" style="endArrow=diamond;endFill=1;html=1;strokeWidth=2;" edge="1" parent="1" source="file-transfer" target="p2p-service">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rel1-label" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="345" y="155" width="20" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- P2PService -> FileInfo -->
+        <mxCell id="rel2" value="" style="endArrow=diamond;endFill=0;html=1;strokeWidth=2;" edge="1" parent="1" source="file-info" target="p2p-service">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rel2-label" value="*" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="110" y="290" width="20" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- FileTransferService -> RelayClient -->
+        <mxCell id="rel3" value="" style="endArrow=open;endFill=0;html=1;strokeWidth=2;dashed=1;" edge="1" parent="1" source="file-transfer" target="relay-client">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rel3-label" value="&lt;&lt;use&gt;&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="645" y="150" width="50" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- FileTransferService -> SecurityManager -->
+        <mxCell id="rel4" value="" style="endArrow=open;endFill=0;html=1;strokeWidth=2;dashed=1;" edge="1" parent="1" source="file-transfer" target="security-mgr">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rel4-label" value="&lt;&lt;use&gt;&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="990" y="150" width="50" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- ShareSession -> FileInfo -->
+        <mxCell id="rel5" value="" style="endArrow=diamond;endFill=1;html=1;strokeWidth=2;" edge="1" parent="1" source="file-info" target="share-session">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rel5-label" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="280" y="385" width="20" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- RelayTransferProgress -> TransferStatus -->
+        <mxCell id="rel6" value="" style="endArrow=open;endFill=0;html=1;strokeWidth=2;" edge="1" parent="1" source="relay-progress" target="transfer-status">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <!-- RelayServer -> PeerRegistry -->
+        <mxCell id="rel7" value="" style="endArrow=diamond;endFill=1;html=1;strokeWidth=2;" edge="1" parent="1" source="peer-registry" target="relay-server">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="rel7-label" value="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="340" y="620" width="20" height="20" as="geometry"/>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

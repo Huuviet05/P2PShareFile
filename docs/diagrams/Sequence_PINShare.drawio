@@ -1,0 +1,258 @@
+<mxfile host="app.diagrams.net" modified="2025-12-21T00:00:00.000Z" agent="Mozilla/5.0" version="21.0.0" type="device">
+  <diagram id="sequence-pin-share" name="Sequence - PIN Share">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- Title -->
+        <mxCell id="title" value="Sequence Diagram: Chia sẻ file qua mã PIN (Quick Share)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="400" y="20" width="400" height="30" as="geometry"/>
+        </mxCell>
+        
+        <!-- Actors/Objects -->
+        <mxCell id="sender" value="Người gửi&#xa;(Sender)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="80" y="60" width="40" height="60" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="ui-sender" value="MainController&#xa;(Sender UI)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="170" y="70" width="100" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="pin-service" value="PINCodeService" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="330" y="70" width="100" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="relay-client" value="RelayClient" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="490" y="70" width="100" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="relay-server" value="RelayServer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="650" y="70" width="100" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="ui-receiver" value="MainController&#xa;(Receiver UI)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="810" y="70" width="100" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="receiver" value="Người nhận&#xa;(Receiver)" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="970" y="60" width="40" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Lifelines -->
+        <mxCell id="line-sender" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="130" as="sourcePoint"/>
+            <mxPoint x="100" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="line-ui-sender" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="110" as="sourcePoint"/>
+            <mxPoint x="220" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="line-pin" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="110" as="sourcePoint"/>
+            <mxPoint x="380" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="line-relay-client" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="110" as="sourcePoint"/>
+            <mxPoint x="540" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="line-relay-server" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="110" as="sourcePoint"/>
+            <mxPoint x="700" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="line-ui-receiver" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="110" as="sourcePoint"/>
+            <mxPoint x="860" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <mxCell id="line-receiver" value="" style="endArrow=none;dashed=1;html=1;strokeWidth=1;strokeColor=#999999;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="990" y="130" as="sourcePoint"/>
+            <mxPoint x="990" y="800" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Phase 1: Create PIN -->
+        <mxCell id="phase1" value="PHASE 1: Tạo mã PIN" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="150" width="140" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- Message 1 -->
+        <mxCell id="msg1" value="1. Chọn file &amp; click 'Tạo PIN'" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="100" y="180" as="sourcePoint"/>
+            <mxPoint x="220" y="180" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 2 -->
+        <mxCell id="msg2" value="2. createPIN(fileInfo)" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="210" as="sourcePoint"/>
+            <mxPoint x="380" y="210" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 3 -->
+        <mxCell id="msg3" value="3. uploadFile(file)" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="240" as="sourcePoint"/>
+            <mxPoint x="540" y="240" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 4 -->
+        <mxCell id="msg4" value="4. POST /api/relay/upload&#xa;(multipart: file chunks)" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="280" as="sourcePoint"/>
+            <mxPoint x="700" y="280" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Activation box -->
+        <mxCell id="act1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="695" y="285" width="10" height="50" as="geometry"/>
+        </mxCell>
+        
+        <!-- Message 5 -->
+        <mxCell id="msg5" value="5. 200 OK {uploadId}" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="340" as="sourcePoint"/>
+            <mxPoint x="540" y="340" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 6 -->
+        <mxCell id="msg6" value="6. POST /api/pin/create&#xa;{fileId, fileName, size}" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="380" as="sourcePoint"/>
+            <mxPoint x="700" y="380" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Activation box 2 -->
+        <mxCell id="act2" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="695" y="385" width="10" height="50" as="geometry"/>
+        </mxCell>
+        
+        <!-- Message 7 -->
+        <mxCell id="msg7" value="7. 200 OK {pin: '123456', expires: 10min}" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="440" as="sourcePoint"/>
+            <mxPoint x="540" y="440" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 8 -->
+        <mxCell id="msg8" value="8. ShareSession {pin, fileInfo}" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="540" y="470" as="sourcePoint"/>
+            <mxPoint x="380" y="470" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 9 -->
+        <mxCell id="msg9" value="9. ShareSession" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="380" y="500" as="sourcePoint"/>
+            <mxPoint x="220" y="500" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 10 -->
+        <mxCell id="msg10" value="10. Hiển thị PIN: 123456" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="220" y="530" as="sourcePoint"/>
+            <mxPoint x="100" y="530" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Phase 2: Redeem PIN -->
+        <mxCell id="phase2" value="PHASE 2: Nhập mã PIN và tải file" style="text;html=1;strokeColor=none;fillColor=#f5f5f5;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=11;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="560" width="200" height="20" as="geometry"/>
+        </mxCell>
+        
+        <!-- Message 11 -->
+        <mxCell id="msg11" value="11. Nhập PIN: 123456" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="990" y="590" as="sourcePoint"/>
+            <mxPoint x="860" y="590" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 12 -->
+        <mxCell id="msg12" value="12. GET /api/pin/{pin}" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="620" as="sourcePoint"/>
+            <mxPoint x="700" y="620" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Activation box 3 -->
+        <mxCell id="act3" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="695" y="625" width="10" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Message 13 -->
+        <mxCell id="msg13" value="13. 200 OK {fileId, fileName, size}" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="670" as="sourcePoint"/>
+            <mxPoint x="860" y="670" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 14 -->
+        <mxCell id="msg14" value="14. GET /api/relay/download/{fileId}" style="html=1;verticalAlign=bottom;endArrow=block;strokeWidth=2;strokeColor=#333333;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="700" as="sourcePoint"/>
+            <mxPoint x="700" y="700" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Activation box 4 -->
+        <mxCell id="act4" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="695" y="705" width="10" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Message 15 -->
+        <mxCell id="msg15" value="15. 200 OK (file binary data)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="700" y="750" as="sourcePoint"/>
+            <mxPoint x="860" y="750" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Message 16 -->
+        <mxCell id="msg16" value="16. File đã tải xong!" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;strokeWidth=2;strokeColor=#82b366;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="860" y="780" as="sourcePoint"/>
+            <mxPoint x="990" y="780" as="targetPoint"/>
+          </mxGeometry>
+        </mxCell>
+        
+        <!-- Notes -->
+        <mxCell id="note1" value="PIN có hiệu lực trong 10 phút&#xa;Sau đó sẽ tự động hết hạn" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;darkOpacity=0.05;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="1020" y="400" width="140" height="60" as="geometry"/>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
