@@ -66,7 +66,7 @@
                      side="LEFT" styleClass="modern-tab-pane" HBox.hgrow="ALWAYS">
                 
                 <!-- ═══════════════════════════════════════════════════════════════ -->
-                <!-- TAB 1: CODE -->
+                <!-- TAB 1: CODE - 2 CỘT ĐỐI XỨNG -->
                 <!-- ═══════════════════════════════════════════════════════════════ -->
                 <Tab>
                     <graphic>
@@ -76,124 +76,140 @@
                         </VBox>
                     </graphic>
                     <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
-                        <HBox spacing="40" styleClass="content-area" alignment="TOP_CENTER">
+                        <HBox spacing="24" styleClass="content-area" alignment="TOP_CENTER">
                             <padding>
-                                <Insets top="30" right="40" bottom="30" left="40"/>
+                                <Insets top="20" right="30" bottom="20" left="30"/>
                             </padding>
                             
-                            <!-- ══════════════ GỬI FILE ══════════════ -->
-                            <VBox spacing="24" HBox.hgrow="ALWAYS" styleClass="card share-panel" 
-                                  maxWidth="480" minWidth="360">
+                            <!-- ══════════════ GỬI FILE (CARD BÊN TRÁI) ══════════════ -->
+                            <VBox spacing="20" HBox.hgrow="ALWAYS" styleClass="card pin-card" 
+                                  maxWidth="520" minWidth="420" prefWidth="520">
                                 
-                                <!-- Header -->
-                                <HBox spacing="16" alignment="CENTER_LEFT" styleClass="panel-header">
-                                    <StackPane styleClass="panel-icon-box send-icon-box">
-                                        <Label text="↑" styleClass="panel-icon-text"/>
-                                    </StackPane>
-                                    <VBox spacing="4">
-                                        <Label text="Gửi File" styleClass="panel-title"/>
-                                        <Label text="Tạo mã PIN để chia sẻ nhanh" styleClass="panel-desc"/>
-                                    </VBox>
-                                </HBox>
-                                
-                                <!-- Steps -->
-                                <HBox styleClass="step-box" spacing="12" alignment="CENTER">
-                                    <Label text="1. Chọn file" styleClass="step-text"/>
-                                    <Label text="→" styleClass="step-arrow"/>
-                                    <Label text="2. Nhận mã PIN" styleClass="step-text"/>
-                                    <Label text="→" styleClass="step-arrow"/>
-                                    <Label text="3. Gửi mã cho bạn" styleClass="step-text"/>
-                                </HBox>
-                                
-                                <!-- Send Button (trước khi tạo PIN) -->
-                                <VBox fx:id="pinSelectPanel" spacing="20" alignment="CENTER" 
-                                      VBox.vgrow="ALWAYS" styleClass="pin-select-container">
-                                    
-                                    <StackPane styleClass="send-icon-circle">
-                                        <Label text="+" styleClass="send-icon-plus"/>
-                                    </StackPane>
-                                    
-                                    <Label text="Nhấn để chọn file chia sẻ" styleClass="send-hint-text"/>
-                                    
-                                    <Button text="Chọn File" onAction="#handleSelectFileForPIN" 
-                                            prefWidth="180" styleClass="btn-send-large"/>
+                                <!-- Header + Stepper -->
+                                <VBox spacing="12">
+                                    <Label text="Gửi file" styleClass="card-title-large"/>
+                                    <Label text="Tạo PIN chia sẻ nhanh" styleClass="card-subtitle"/>
+                                    <HBox styleClass="stepper" spacing="8" alignment="CENTER_LEFT">
+                                        <Label text="❶" styleClass="stepper-item"/>
+                                        <Label text="Chọn file" styleClass="stepper-text"/>
+                                        <Label text="›" styleClass="stepper-sep"/>
+                                        <Label text="❷" styleClass="stepper-item"/>
+                                        <Label text="Nhận PIN" styleClass="stepper-text"/>
+                                        <Label text="›" styleClass="stepper-sep"/>
+                                        <Label text="❸" styleClass="stepper-item"/>
+                                        <Label text="Chia sẻ" styleClass="stepper-text"/>
+                                    </HBox>
                                 </VBox>
                                 
-                                <!-- PIN Display (khi đã tạo mã) - Style giống Send Anywhere -->
-                                <VBox fx:id="pinDisplayPanel" visible="false" spacing="16" 
-                                      styleClass="pin-result-box-v2" VBox.vgrow="ALWAYS" alignment="CENTER">
+                                <!-- Dropzone (chưa chọn file) -->
+                                <VBox fx:id="pinSelectPanel" spacing="16" alignment="CENTER" 
+                                      VBox.vgrow="ALWAYS" styleClass="dropzone">
+                                    <Label text="📁" styleClass="dropzone-icon"/>
+                                    <VBox spacing="4" alignment="CENTER">
+                                        <Label text="Kéo thả file vào đây" styleClass="dropzone-title"/>
+                                        <Label text="hoặc" styleClass="dropzone-or"/>
+                                        <Button text="Chọn File" onAction="#handleSelectFileForPIN" 
+                                                styleClass="btn-secondary" prefWidth="140"/>
+                                    </VBox>
+                                </VBox>
+                                
+                                <!-- Khi đã chọn file -->
+                                <VBox fx:id="pinDisplayPanel" visible="false" spacing="18" 
+                                      VBox.vgrow="ALWAYS" alignment="TOP_CENTER">
                                     
-                                    <!-- Waiting indicator -->
-                                    <HBox alignment="CENTER" spacing="12">
-                                        <Label text="←" styleClass="pin-back-arrow" onMouseClicked="#handleCancelPIN"/>
-                                        <VBox spacing="2" alignment="CENTER">
-                                            <Label text="Đang chờ..." styleClass="pin-waiting-title"/>
-                                            <Label text="Nhập mã này ở thiết bị nhận" styleClass="pin-waiting-desc"/>
+                                    <!-- File chip -->
+                                    <HBox fx:id="fileChipBox" spacing="12" alignment="CENTER_LEFT" styleClass="file-chip">
+                                        <Label text="📄" style="-fx-font-size: 20;"/>
+                                        <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                            <Label fx:id="pinFileNameLabel" text="filename.docx" styleClass="file-chip-name"/>
+                                            <Label fx:id="fileChipSize" text="2.5 MB" styleClass="file-chip-size"/>
                                         </VBox>
+                                        <Button text="Đổi file" onAction="#handleSelectFileForPIN" 
+                                                styleClass="btn-chip-action"/>
                                     </HBox>
                                     
-                                    <!-- Timer -->
-                                    <HBox alignment="CENTER" spacing="8">
-                                        <Label text="Hết hạn sau" styleClass="pin-expiry-label"/>
-                                        <Label fx:id="pinExpiryLabel" text="09:59" styleClass="pin-timer-red"/>
-                                    </HBox>
+                                    <!-- PIN 6 ô + Copy + Timer -->
+                                    <VBox spacing="12" alignment="CENTER">
+                                        <Label text="MÃ PIN" styleClass="pin-section-title"/>
+                                        <HBox spacing="8" alignment="CENTER">
+                                            <HBox fx:id="pinDigitsBox" spacing="6" styleClass="pin-digits-container">
+                                                <Label fx:id="pinLabel" text="0 0 0 0 0 0" styleClass="pin-digits-separated"/>
+                                            </HBox>
+                                            <Button fx:id="btnCopyPin" text="📋" styleClass="btn-icon-copy" 
+                                                    onAction="#handleCopyPIN"/>
+                                        </HBox>
+                                        <HBox spacing="6" alignment="CENTER">
+                                            <Label text="Hết hạn sau" styleClass="pin-timer-label"/>
+                                            <Label fx:id="pinExpiryLabel" text="09:58" styleClass="pin-timer"/>
+                                        </HBox>
+                                    </VBox>
                                     
-                                    <!-- Big PIN digits - 6 ô riêng biệt -->
-                                    <HBox alignment="CENTER" spacing="10" styleClass="pin-digits-box">
-                                        <Label fx:id="pinLabel" text="000000" styleClass="pin-digit-large"/>
-                                    </HBox>
-                                    
-                                    <!-- File info + Cancel button cùng nhau ở giữa -->
-                                    <VBox spacing="12" alignment="CENTER" styleClass="pin-file-box">
-                                        <Label text="📄 File đang chia sẻ:" styleClass="pin-file-label"/>
-                                        <Label fx:id="pinFileNameLabel" text="filename.txt" styleClass="pin-filename"/>
+                                    <!-- CTA + Status -->
+                                    <VBox spacing="10" alignment="CENTER">
+                                        <Button fx:id="btnSharePin" text="Chia sẻ PIN" 
+                                                styleClass="btn-primary-large" prefWidth="200"/>
+                                        <Label text="Mã PIN sẽ tự hủy khi hết thời gian" styleClass="status-hint"/>
                                         <Button text="Hủy chia sẻ" onAction="#handleCancelPIN" 
-                                                prefWidth="140" styleClass="btn-cancel-outline"/>
+                                                styleClass="btn-link"/>
                                     </VBox>
                                 </VBox>
                             </VBox>
                             
-                            <!-- ══════════════ NHẬN FILE ══════════════ -->
-                            <VBox spacing="24" HBox.hgrow="ALWAYS" styleClass="card share-panel" 
-                                  maxWidth="480" minWidth="360">
+                            <!-- ══════════════ NHẬN FILE (CARD BÊN PHẢI) ══════════════ -->
+                            <VBox spacing="20" HBox.hgrow="ALWAYS" styleClass="card pin-card" 
+                                  maxWidth="520" minWidth="420" prefWidth="520">
                                 
-                                <!-- Header -->
-                                <HBox spacing="16" alignment="CENTER_LEFT" styleClass="panel-header">
-                                    <StackPane styleClass="panel-icon-box receive-icon-box">
-                                        <Label text="↓" styleClass="panel-icon-text"/>
-                                    </StackPane>
-                                    <VBox spacing="4">
-                                        <Label text="Nhận File" styleClass="panel-title"/>
-                                        <Label text="Nhập mã PIN để tải về" styleClass="panel-desc"/>
+                                <!-- Header + Stepper -->
+                                <VBox spacing="12">
+                                    <Label text="Nhận file" styleClass="card-title-large"/>
+                                    <Label text="Nhập PIN để tải về" styleClass="card-subtitle"/>
+                                    <HBox styleClass="stepper" spacing="8" alignment="CENTER_LEFT">
+                                        <Label text="❶" styleClass="stepper-item"/>
+                                        <Label text="Nhận PIN" styleClass="stepper-text"/>
+                                        <Label text="›" styleClass="stepper-sep"/>
+                                        <Label text="❷" styleClass="stepper-item"/>
+                                        <Label text="Nhập mã" styleClass="stepper-text"/>
+                                        <Label text="›" styleClass="stepper-sep"/>
+                                        <Label text="❸" styleClass="stepper-item"/>
+                                        <Label text="Tải về" styleClass="stepper-text"/>
+                                    </HBox>
+                                </VBox>
+                                
+                                <!-- 6 ô PIN input -->
+                                <VBox spacing="16" alignment="CENTER" VBox.vgrow="ALWAYS">
+                                    <Label text="NHẬP MÃ PIN" styleClass="pin-section-title"/>
+                                    <TextField fx:id="pinInputField" promptText="0  0  0  0  0  0" 
+                                              alignment="CENTER" styleClass="pin-input-separated" 
+                                              maxWidth="320" prefWidth="320"/>
+                                    
+                                    <!-- Nơi lưu file -->
+                                    <HBox spacing="8" alignment="CENTER" styleClass="save-location-box">
+                                        <Label text="📂" style="-fx-font-size: 16;"/>
+                                        <Label text="Lưu vào:" styleClass="save-label"/>
+                                        <Label fx:id="saveLocationLabel" text="Downloads" styleClass="save-path"/>
+                                        <Button text="Đổi" styleClass="btn-chip-action" 
+                                                onAction="#handleChangeSaveLocation"/>
+                                    </HBox>
+                                    
+                                    <!-- Progress (ẩn mặc định) -->
+                                    <VBox fx:id="receiveProgressBox" visible="false" spacing="8" 
+                                          styleClass="progress-box">
+                                        <ProgressBar fx:id="receiveProgressBar" prefWidth="300" 
+                                                    styleClass="modern-progress"/>
+                                        <HBox spacing="10" alignment="CENTER">
+                                            <Label fx:id="receiveSpeedLabel" text="0 MB/s" styleClass="progress-text"/>
+                                            <Label text="•" styleClass="progress-sep"/>
+                                            <Label fx:id="receiveEtaLabel" text="00:00" styleClass="progress-text"/>
+                                        </HBox>
                                     </VBox>
-                                </HBox>
+                                </VBox>
                                 
-                                <!-- Steps -->
-                                <HBox styleClass="step-box" spacing="12" alignment="CENTER">
-                                    <Label text="1. Nhận mã từ bạn" styleClass="step-text"/>
-                                    <Label text="→" styleClass="step-arrow"/>
-                                    <Label text="2. Nhập mã" styleClass="step-text"/>
-                                    <Label text="→" styleClass="step-arrow"/>
-                                    <Label text="3. Nhấn Nhận" styleClass="step-text"/>
-                                </HBox>
-                                
-                                <!-- PIN Input - Style cải tiến -->
-                                <VBox spacing="24" alignment="CENTER" VBox.vgrow="ALWAYS" 
-                                      styleClass="pin-receive-container">
-                                    
-                                    <StackPane styleClass="receive-icon-circle">
-                                        <Label text="↓" styleClass="receive-icon-arrow"/>
-                                    </StackPane>
-                                    
-                                    <Label text="Nhập mã 6 số" styleClass="receive-title"/>
-                                    
-                                    <TextField fx:id="pinInputField" promptText="● ● ● ● ● ●" 
-                                              maxWidth="280" prefWidth="280" alignment="CENTER" styleClass="pin-input-large"/>
-                                    
+                                <!-- CTA -->
+                                <VBox spacing="10" alignment="CENTER">
                                     <Button fx:id="receiveButton" text="Nhận File" 
-                                            onAction="#handleReceiveByPIN" prefWidth="180" styleClass="btn-receive-large"/>
-                                    
-                                    <Label text="File sẽ được lưu vào thư mục Downloads" styleClass="receive-hint"/>
+                                            onAction="#handleReceiveByPIN" 
+                                            styleClass="btn-success-large" prefWidth="200"/>
+                                    <Label text="Nhập đầy đủ 6 số để tải file" styleClass="status-hint"/>
                                 </VBox>
                             </VBox>
                             
@@ -202,7 +218,7 @@
                 </Tab>
                 
                 <!-- ═══════════════════════════════════════════════════════════════ -->
-                <!-- TAB 2: MY FILES -->
+                <!-- TAB 2: FILE - TOOLBAR + 2 CỘT -->
                 <!-- ═══════════════════════════════════════════════════════════════ -->
                 <Tab>
                     <graphic>
@@ -211,43 +227,50 @@
                             <Label text="File" styleClass="tab-label-text"/>
                         </VBox>
                     </graphic>
-                    <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
-                        <VBox spacing="16" styleClass="content-area">
+                    <VBox styleClass="tab-content">
+                        <!-- Toolbar -->
+                        <HBox spacing="12" alignment="CENTER_LEFT" styleClass="toolbar">
+                            <Button fx:id="addFileButton" text="➕ Thêm file" onAction="#handleAddFile"
+                                    styleClass="btn-primary"/>
+                            <Button fx:id="addDirectoryButton" text="📁 Thêm thư mục" onAction="#handleAddDirectory"
+                                    styleClass="btn-secondary"/>
+                            <Button fx:id="removeSharedButton" text="✕ Gỡ khỏi chia sẻ" disable="true"
+                                    styleClass="btn-danger-outline"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <TextField fx:id="sharedSearchField" promptText="Tìm trong danh sách..." 
+                                      prefWidth="220" styleClass="search-toolbar"/>
+                        </HBox>
+                        
+                        <!-- 2 cột: 70% Table + 30% Peers -->
+                        <HBox spacing="16" HBox.hgrow="ALWAYS" VBox.vgrow="ALWAYS" styleClass="content-area-split">
                             
-                            <!-- Add Files -->
-                            <VBox spacing="12" styleClass="card">
-                                <Label text="Thêm file chia sẻ" styleClass="card-title"/>
-                                <HBox spacing="12">
-                                    <Button fx:id="addFileButton" text="Thêm File" onAction="#handleAddFile"
-                                            styleClass="btn-primary" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                    <Button fx:id="addDirectoryButton" text="Thêm Thư mục" onAction="#handleAddDirectory"
-                                            styleClass="btn-accent" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                                </HBox>
-                            </VBox>
-                            
-                            <!-- Shared Files List -->
-                            <VBox spacing="12" VBox.vgrow="ALWAYS" styleClass="card">
+                            <!-- Cột trái: Table đang chia sẻ -->
+                            <VBox spacing="12" HBox.hgrow="ALWAYS" styleClass="card table-card">
                                 <Label text="Đang chia sẻ" styleClass="card-title"/>
                                 <ListView fx:id="sharedFilesListView" VBox.vgrow="ALWAYS" 
-                                         minHeight="140" styleClass="modern-list"/>
+                                         styleClass="modern-list files-table"/>
+                                <Label fx:id="sharedFilesEmptyLabel" text="Chưa có file chia sẻ. Nhấn 'Thêm file' để bắt đầu" 
+                                       styleClass="empty-state" visible="false"/>
                             </VBox>
                             
-                            <!-- Peers List -->
-                            <VBox spacing="12" styleClass="card">
-                                <HBox spacing="10" alignment="CENTER_LEFT">
+                            <!-- Cột phải: Peers card -->
+                            <VBox spacing="12" prefWidth="300" styleClass="card peers-card">
+                                <HBox spacing="8" alignment="CENTER_LEFT">
                                     <Label text="Peers online" styleClass="card-title"/>
                                     <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="Tự động cập nhật" styleClass="hint-text"/>
+                                    <Label fx:id="peersCountBadge" text="0" styleClass="count-badge"/>
                                 </HBox>
-                                <ListView fx:id="peerListView" prefHeight="100" minHeight="80" styleClass="modern-list"/>
+                                <ListView fx:id="peerListView" VBox.vgrow="ALWAYS" 
+                                         styleClass="modern-list peers-list"/>
+                                <Label text="Tự động cập nhật mỗi 30s" styleClass="hint-text-small"/>
                             </VBox>
                             
-                        </VBox>
-                    </ScrollPane>
+                        </HBox>
+                    </VBox>
                 </Tab>
                 
                 <!-- ═══════════════════════════════════════════════════════════════ -->
-                <!-- TAB 3: DISCOVER -->
+                <!-- TAB 3: TÌM - SEARCH BAR + TABLE + STATUS -->
                 <!-- ═══════════════════════════════════════════════════════════════ -->
                 <Tab>
                     <graphic>
@@ -256,44 +279,55 @@
                             <Label text="Tìm" styleClass="tab-label-text"/>
                         </VBox>
                     </graphic>
-                    <ScrollPane fitToWidth="true" fitToHeight="true" styleClass="content-scroll">
-                        <VBox spacing="16" styleClass="content-area">
+                    <VBox styleClass="tab-content">
+                        <!-- Search bar + Filters -->
+                        <HBox spacing="12" alignment="CENTER" styleClass="search-header">
+                            <TextField fx:id="searchField" promptText="Nhập tên file..." 
+                                      HBox.hgrow="ALWAYS" styleClass="search-input-main"/>
+                            <Button fx:id="searchButton" text="🔍 Tìm kiếm" onAction="#handleSearch"
+                                    styleClass="btn-primary" prefWidth="120"/>
+                            <Separator orientation="VERTICAL"/>
+                            <Label text="Lọc:" styleClass="filter-label"/>
+                            <Button text="Tất cả peers" styleClass="filter-chip"/>
+                            <Button text="Tất cả loại" styleClass="filter-chip"/>
+                        </HBox>
+                        
+                        <!-- Results table -->
+                        <VBox spacing="12" VBox.vgrow="ALWAYS" styleClass="content-area">
+                            <HBox spacing="10" alignment="CENTER_LEFT" styleClass="table-header">
+                                <Label text="Kết quả tìm kiếm" styleClass="card-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="searchStatusLabel" text="Sẵn sàng tìm kiếm" 
+                                       styleClass="search-status"/>
+                            </HBox>
                             
-                            <!-- Search Box -->
-                            <VBox spacing="12" styleClass="card">
-                                <Label text="Tìm kiếm file trong mạng" styleClass="card-title"/>
-                                <HBox spacing="12" alignment="CENTER">
-                                    <TextField fx:id="searchField" promptText="Nhập tên file cần tìm..." 
-                                              HBox.hgrow="ALWAYS" styleClass="modern-input search-input"/>
-                                    <Button fx:id="searchButton" text="Tìm kiếm" onAction="#handleSearch"
-                                            styleClass="btn-primary"/>
-                                </HBox>
-                            </VBox>
+                            <ListView fx:id="searchResultsListView" VBox.vgrow="ALWAYS" 
+                                     styleClass="modern-list search-results-table"/>
                             
-                            <!-- Results -->
-                            <VBox spacing="12" VBox.vgrow="ALWAYS" styleClass="card">
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label text="Kết quả tìm kiếm" styleClass="card-title"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Button fx:id="previewButton" text="Xem trước" onAction="#handlePreview"
-                                            styleClass="btn-ghost">
-                                        <tooltip>
-                                            <Tooltip text="Xem trước nội dung file"/>
-                                        </tooltip>
-                                    </Button>
-                                    <Button fx:id="downloadButton" text="Tải về" onAction="#handleDownload"
-                                            styleClass="btn-success">
-                                        <tooltip>
-                                            <Tooltip text="Tải file về máy (mã hóa AES-256)"/>
-                                        </tooltip>
-                                    </Button>
-                                </HBox>
-                                <ListView fx:id="searchResultsListView" VBox.vgrow="ALWAYS" 
-                                         minHeight="200" styleClass="modern-list"/>
-                            </VBox>
+                            <Label fx:id="searchEmptyLabel" text="Nhập tên file và nhấn Enter để tìm" 
+                                   styleClass="empty-state-center" visible="false"/>
+                            <Label fx:id="searchNoResultLabel" text="Không tìm thấy file phù hợp. Thử tên ngắn hơn" 
+                                   styleClass="empty-state-center" visible="false"/>
                             
+                            <!-- Action buttons (ẩn mặc định, hiện khi chọn row) -->
+                            <HBox spacing="10" alignment="CENTER" styleClass="table-actions" 
+                                  fx:id="searchActionsBox" visible="false">
+                                <Button fx:id="previewButton" text="👁 Xem trước" onAction="#handlePreview"
+                                        styleClass="btn-ghost"/>
+                                <Button fx:id="downloadButton" text="⬇ Tải về" onAction="#handleDownload"
+                                        styleClass="btn-primary"/>
+                            </HBox>
                         </VBox>
-                    </ScrollPane>
+                        
+                        <!-- Status bar -->
+                        <HBox spacing="12" alignment="CENTER" styleClass="status-bar">
+                            <Label fx:id="searchProgressLabel" text="" styleClass="status-text"/>
+                            <ProgressIndicator fx:id="searchProgressIndicator" visible="false" 
+                                             styleClass="small-spinner"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="searchResultCountLabel" text="" styleClass="result-count"/>
+                        </HBox>
+                    </VBox>
                 </Tab>
                 
             </TabPane>

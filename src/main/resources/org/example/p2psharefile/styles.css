@@ -1111,3 +1111,480 @@
 .tab-graphic Label {
 	-fx-font-size: 22;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TAB CODE - REDESIGN V2: PIN CARD STYLE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.pin-card {
+	-fx-padding: 28 32;
+	-fx-background-radius: 16;
+}
+
+.card-title-large {
+	-fx-font-size: 20;
+	-fx-font-weight: 700;
+	-fx-text-fill: #1f2937;
+}
+
+.card-subtitle {
+	-fx-font-size: 13;
+	-fx-text-fill: #6b7280;
+}
+
+/* Stepper */
+.stepper {
+	-fx-background-color: #f9fafb;
+	-fx-background-radius: 8;
+	-fx-padding: 8 12;
+}
+
+.stepper-item {
+	-fx-font-size: 11;
+	-fx-text-fill: #3b82f6;
+	-fx-font-weight: 700;
+}
+
+.stepper-text {
+	-fx-font-size: 11;
+	-fx-text-fill: #6b7280;
+	-fx-font-weight: 600;
+}
+
+.stepper-sep {
+	-fx-font-size: 12;
+	-fx-text-fill: #d1d5db;
+}
+
+/* Dropzone */
+.dropzone {
+	-fx-background-color: #f9fafb;
+	-fx-border-color: #d1d5db;
+	-fx-border-width: 2;
+	-fx-border-style: dashed;
+	-fx-border-radius: 12;
+	-fx-background-radius: 12;
+	-fx-padding: 40 20;
+}
+
+.dropzone:hover {
+	-fx-border-color: #3b82f6;
+	-fx-background-color: #eff6ff;
+}
+
+.dropzone-icon {
+	-fx-font-size: 48;
+	-fx-opacity: 0.5;
+}
+
+.dropzone-title {
+	-fx-font-size: 14;
+	-fx-font-weight: 600;
+	-fx-text-fill: #374151;
+}
+
+.dropzone-or {
+	-fx-font-size: 12;
+	-fx-text-fill: #9ca3af;
+}
+
+/* File chip */
+.file-chip {
+	-fx-background-color: #eff6ff;
+	-fx-border-color: #bfdbfe;
+	-fx-border-radius: 10;
+	-fx-background-radius: 10;
+	-fx-padding: 12 16;
+}
+
+.file-chip-name {
+	-fx-font-size: 13;
+	-fx-font-weight: 600;
+	-fx-text-fill: #1e40af;
+}
+
+.file-chip-size {
+	-fx-font-size: 11;
+	-fx-text-fill: #60a5fa;
+}
+
+.btn-chip-action {
+	-fx-background-color: transparent;
+	-fx-text-fill: #3b82f6;
+	-fx-font-size: 11;
+	-fx-font-weight: 600;
+	-fx-padding: 4 10;
+	-fx-border-color: #3b82f6;
+	-fx-border-radius: 5;
+	-fx-cursor: hand;
+}
+
+.btn-chip-action:hover {
+	-fx-background-color: #dbeafe;
+}
+
+/* PIN Section */
+.pin-section-title {
+	-fx-font-size: 11;
+	-fx-font-weight: 700;
+	-fx-text-fill: #9ca3af;
+	-fx-letter-spacing: 1;
+}
+
+.pin-digits-container {
+	-fx-background-color: #ffffff;
+	-fx-border-color: #e5e7eb;
+	-fx-border-width: 2;
+	-fx-border-radius: 12;
+	-fx-background-radius: 12;
+	-fx-padding: 16 20;
+}
+
+.pin-digits-separated {
+	-fx-font-size: 44;
+	-fx-font-weight: 700;
+	-fx-text-fill: #1f2937;
+	-fx-font-family: 'Consolas', 'Monaco', monospace;
+	-fx-letter-spacing: 12;
+}
+
+.btn-icon-copy {
+	-fx-background-color: #3b82f6;
+	-fx-text-fill: white;
+	-fx-font-size: 18;
+	-fx-padding: 12;
+	-fx-background-radius: 8;
+	-fx-cursor: hand;
+}
+
+.btn-icon-copy:hover {
+	-fx-background-color: #2563eb;
+}
+
+.pin-timer-label {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+}
+
+.pin-timer {
+	-fx-font-size: 16;
+	-fx-font-weight: 700;
+	-fx-text-fill: #ef4444;
+	-fx-font-family: 'Consolas', monospace;
+}
+
+.btn-primary-large {
+	-fx-background-color: #3b82f6;
+	-fx-text-fill: white;
+	-fx-font-size: 14;
+	-fx-font-weight: 600;
+	-fx-padding: 14 36;
+	-fx-background-radius: 10;
+	-fx-cursor: hand;
+}
+
+.btn-primary-large:hover {
+	-fx-background-color: #2563eb;
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.4), 12, 0, 0, 4);
+}
+
+.btn-success-large {
+	-fx-background-color: #10b981;
+	-fx-text-fill: white;
+	-fx-font-size: 14;
+	-fx-font-weight: 600;
+	-fx-padding: 14 36;
+	-fx-background-radius: 10;
+	-fx-cursor: hand;
+}
+
+.btn-success-large:hover {
+	-fx-background-color: #059669;
+	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.4), 12, 0, 0, 4);
+}
+
+.status-hint {
+	-fx-font-size: 11;
+	-fx-text-fill: #9ca3af;
+}
+
+.btn-link {
+	-fx-background-color: transparent;
+	-fx-text-fill: #6b7280;
+	-fx-font-size: 12;
+	-fx-padding: 4 8;
+	-fx-cursor: hand;
+	-fx-underline: true;
+}
+
+.btn-link:hover {
+	-fx-text-fill: #374151;
+}
+
+/* PIN Input separated */
+.pin-input-separated {
+	-fx-background-color: #ffffff;
+	-fx-border-color: #e5e7eb;
+	-fx-border-width: 2;
+	-fx-border-radius: 12;
+	-fx-background-radius: 12;
+	-fx-padding: 18 24;
+	-fx-font-size: 40;
+	-fx-font-weight: 700;
+	-fx-text-fill: #1f2937;
+	-fx-font-family: 'Consolas', 'Monaco', monospace;
+	-fx-letter-spacing: 14;
+}
+
+.pin-input-separated:focused {
+	-fx-border-color: #10b981;
+	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.3), 14, 0, 0, 3);
+}
+
+/* Save location */
+.save-location-box {
+	-fx-background-color: #f9fafb;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 8;
+	-fx-background-radius: 8;
+	-fx-padding: 10 14;
+}
+
+.save-label {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+}
+
+.save-path {
+	-fx-font-size: 12;
+	-fx-font-weight: 600;
+	-fx-text-fill: #3b82f6;
+}
+
+/* Progress */
+.progress-box {
+	-fx-background-color: #f0fdf4;
+	-fx-border-color: #bbf7d0;
+	-fx-border-radius: 8;
+	-fx-background-radius: 8;
+	-fx-padding: 12;
+}
+
+.modern-progress {
+	-fx-pref-height: 8;
+}
+
+.progress-text {
+	-fx-font-size: 11;
+	-fx-text-fill: #059669;
+	-fx-font-weight: 600;
+	-fx-font-family: 'Consolas', monospace;
+}
+
+.progress-sep {
+	-fx-font-size: 10;
+	-fx-text-fill: #d1d5db;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TAB FILE - TOOLBAR + 2 COLUMNS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.tab-content {
+	-fx-background-color: #f3f4f6;
+	-fx-spacing: 0;
+}
+
+.toolbar {
+	-fx-background-color: #ffffff;
+	-fx-padding: 14 20;
+	-fx-border-color: #e5e7eb;
+	-fx-border-width: 0 0 1 0;
+}
+
+.btn-danger-outline {
+	-fx-background-color: transparent;
+	-fx-text-fill: #dc2626;
+	-fx-font-size: 12;
+	-fx-font-weight: 600;
+	-fx-padding: 8 16;
+	-fx-border-color: #fca5a5;
+	-fx-border-radius: 6;
+	-fx-cursor: hand;
+}
+
+.btn-danger-outline:hover {
+	-fx-background-color: #fee2e2;
+}
+
+.btn-danger-outline:disabled {
+	-fx-opacity: 0.4;
+	-fx-cursor: default;
+}
+
+.search-toolbar {
+	-fx-background-color: #f9fafb;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 8;
+	-fx-background-radius: 8;
+	-fx-padding: 8 12;
+	-fx-font-size: 12;
+}
+
+.search-toolbar:focused {
+	-fx-border-color: #3b82f6;
+	-fx-background-color: #ffffff;
+}
+
+.content-area-split {
+	-fx-padding: 16 20;
+}
+
+.table-card {
+	-fx-min-width: 0;
+}
+
+.peers-card {
+	-fx-min-width: 280;
+	-fx-max-width: 320;
+}
+
+.count-badge {
+	-fx-background-color: #dbeafe;
+	-fx-text-fill: #1e40af;
+	-fx-font-size: 11;
+	-fx-font-weight: 700;
+	-fx-padding: 3 8;
+	-fx-background-radius: 10;
+}
+
+.empty-state {
+	-fx-font-size: 13;
+	-fx-text-fill: #9ca3af;
+	-fx-padding: 40 20;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+.empty-state-center {
+	-fx-font-size: 14;
+	-fx-text-fill: #9ca3af;
+	-fx-padding: 60 20;
+	-fx-alignment: center;
+	-fx-text-alignment: center;
+}
+
+.hint-text-small {
+	-fx-font-size: 11;
+	-fx-text-fill: #9ca3af;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   TAB TÌM - SEARCH BAR + TABLE
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.search-header {
+	-fx-background-color: #ffffff;
+	-fx-padding: 16 20;
+	-fx-border-color: #e5e7eb;
+	-fx-border-width: 0 0 1 0;
+}
+
+.search-input-main {
+	-fx-background-color: #f9fafb;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 10;
+	-fx-background-radius: 10;
+	-fx-padding: 12 16;
+	-fx-font-size: 14;
+}
+
+.search-input-main:focused {
+	-fx-border-color: #3b82f6;
+	-fx-background-color: #ffffff;
+	-fx-border-width: 2;
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.2), 10, 0, 0, 0);
+}
+
+.filter-label {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+	-fx-font-weight: 600;
+}
+
+.filter-chip {
+	-fx-background-color: #f3f4f6;
+	-fx-text-fill: #374151;
+	-fx-font-size: 11;
+	-fx-font-weight: 600;
+	-fx-padding: 6 12;
+	-fx-background-radius: 16;
+	-fx-cursor: hand;
+}
+
+.filter-chip:hover {
+	-fx-background-color: #e5e7eb;
+}
+
+.table-header {
+	-fx-padding: 16 20 8 20;
+}
+
+.search-status {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+	-fx-padding: 4 10;
+	-fx-background-color: #f9fafb;
+	-fx-background-radius: 6;
+}
+
+.table-actions {
+	-fx-padding: 12 20;
+	-fx-background-color: #f9fafb;
+	-fx-border-color: #e5e7eb;
+	-fx-border-width: 1 0 0 0;
+}
+
+.status-bar {
+	-fx-background-color: #ffffff;
+	-fx-padding: 10 20;
+	-fx-border-color: #e5e7eb;
+	-fx-border-width: 1 0 0 0;
+}
+
+.status-text {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+}
+
+.small-spinner {
+	-fx-pref-width: 16;
+	-fx-pref-height: 16;
+}
+
+.result-count {
+	-fx-font-size: 12;
+	-fx-font-weight: 600;
+	-fx-text-fill: #3b82f6;
+}
+
+/* ListView tables styling */
+.files-table .list-cell,
+.peers-list .list-cell,
+.search-results-table .list-cell {
+	-fx-padding: 10 12;
+	-fx-background-color: transparent;
+}
+
+.files-table .list-cell:filled:hover,
+.peers-list .list-cell:filled:hover,
+.search-results-table .list-cell:filled:hover {
+	-fx-background-color: #f9fafb;
+}
+
+.files-table .list-cell:filled:selected,
+.search-results-table .list-cell:filled:selected {
+	-fx-background-color: #eff6ff;
+	-fx-border-color: #bfdbfe;
+	-fx-border-width: 0 0 0 3;
+}

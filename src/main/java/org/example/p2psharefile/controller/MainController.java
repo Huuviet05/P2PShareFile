@@ -37,32 +37,52 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private Label statusDot;
     @FXML private Label peerCountLabel;
     
-    // Tab 1: Peers List
-    @FXML private ListView<PeerInfo> peerListView;
-    
-    // Tab 2: Chia sẻ file
-    @FXML private Button addFileButton;
-    @FXML private Button addDirectoryButton;
-    @FXML private ListView<String> sharedFilesListView;
-    @FXML private Label sharedFileCountLabel;
-    
-    // Tab 3: Tìm kiếm & Download
-    @FXML private TextField searchField;
-    @FXML private Button searchButton;
-    @FXML private ListView<SearchResultItem> searchResultsListView;
-    @FXML private Button previewButton;
-    @FXML private Button downloadButton;
-    @FXML private TextArea logTextArea;
-    @FXML private Label logLabel;
-    
-    // Tab 4: Share Code (PIN)
+    // Tab 1: Share Code (PIN) - Redesigned
     @FXML private VBox pinSelectPanel;
     @FXML private VBox pinDisplayPanel;
+    @FXML private HBox fileChipBox;
     @FXML private Label pinLabel;
     @FXML private Label pinFileNameLabel;
+    @FXML private Label fileChipSize;
     @FXML private Label pinExpiryLabel;
+    @FXML private Button btnCopyPin;
+    @FXML private Button btnSharePin;
     @FXML private TextField pinInputField;
     @FXML private Button receiveButton;
+    @FXML private Label saveLocationLabel;
+    @FXML private VBox receiveProgressBox;
+    @FXML private ProgressBar receiveProgressBar;
+    @FXML private Label receiveSpeedLabel;
+    @FXML private Label receiveEtaLabel;
+    
+    // Tab 2: File - Redesigned
+    @FXML private Button addFileButton;
+    @FXML private Button addDirectoryButton;
+    @FXML private Button removeSharedButton;
+    @FXML private TextField sharedSearchField;
+    @FXML private ListView<String> sharedFilesListView;
+    @FXML private Label sharedFilesEmptyLabel;
+    @FXML private ListView<PeerInfo> peerListView;
+    @FXML private Label peersCountBadge;
+    
+    // Tab 3: Tìm - Redesigned
+    @FXML private TextField searchField;
+    @FXML private Button searchButton;
+    @FXML private Label searchStatusLabel;
+    @FXML private ListView<SearchResultItem> searchResultsListView;
+    @FXML private Label searchEmptyLabel;
+    @FXML private Label searchNoResultLabel;
+    @FXML private HBox searchActionsBox;
+    @FXML private Button previewButton;
+    @FXML private Button downloadButton;
+    @FXML private Label searchProgressLabel;
+    @FXML private ProgressIndicator searchProgressIndicator;
+    @FXML private Label searchResultCountLabel;
+    
+    // Other
+    @FXML private TextArea logTextArea;
+    @FXML private Label logLabel;
+    @FXML private Label sharedFileCountLabel;
     
     // Connection Mode Toggle
     @FXML private ToggleButton p2pModeToggle;
@@ -1329,9 +1349,18 @@ public class MainController implements P2PService.P2PServiceListener {
                         if (session != null) {
                             currentPINSession = session;
                             
-                            // Display PIN in UI - hide select panel, show display panel
-                            pinLabel.setText(session.getPin());
+                            // Display PIN in UI - format as "0 0 0 0 0 0"
+                            String pin = session.getPin();
+                            String formattedPin = String.join(" ", pin.split(""));
+                            pinLabel.setText(formattedPin);
                             pinFileNameLabel.setText(finalFileInfo.getFileName());
+                            
+                            // Update file chip size if element exists
+                            if (fileChipSize != null) {
+                                fileChipSize.setText(finalFileInfo.getFormattedSize());
+                            }
+                            
+                            // Toggle panels
                             pinSelectPanel.setVisible(false);
                             pinSelectPanel.setManaged(false);
                             pinDisplayPanel.setVisible(true);
@@ -1653,5 +1682,42 @@ public class MainController implements P2PService.P2PServiceListener {
     public void onServiceStopped() {
         // Không cần update status vì user đã tắt service
         log("🛑 Service đã dừng");
+    }
+    
+    // ========== New Handler Methods ==========
+    
+    /**
+     * Copy PIN to clipboard
+     */
+    @FXML
+    private void handleCopyPIN() {
+        if (currentPINSession != null) {
+            String pin = currentPINSession.getPin();
+            // Copy to clipboard (JavaFX clipboard)
+            javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(pin);
+            clipboard.setContent(content);
+            
+            showInfo("Đã sao chép mã PIN: " + pin);
+            log("📋 Đã copy PIN vào clipboard");
+        }
+    }
+    
+    /**
+     * Change save location
+     */
+    @FXML
+    private void handleChangeSaveLocation() {
+        DirectoryChooser dirChooser = new DirectoryChooser();
+        dirChooser.setTitle("Chọn thư mục lưu file");
+        dirChooser.setInitialDirectory(new File(downloadDirectory));
+        File saveDir = dirChooser.showDialog(saveLocationLabel.getScene().getWindow());
+        
+        if (saveDir != null) {
+            downloadDirectory = saveDir.getAbsolutePath();
+            saveLocationLabel.setText(saveDir.getName());
+            log("📂 Đổi thư mục lưu: " + downloadDirectory);
+        }
     }
 }
