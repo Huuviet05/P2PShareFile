@@ -117,13 +117,14 @@
 }
 
 .tab-graphic {
-	-fx-padding: 2 0;
+	-fx-padding: 4 0;
 }
 
 .tab-label-text {
-	-fx-font-size: 11;
+	-fx-font-size: 12;
 	-fx-font-weight: 600;
-	-fx-text-fill: #9ca3af;
+	-fx-text-fill: #ffffff;
+	-fx-opacity: 0.7;
 }
 
 .modern-tab-pane
@@ -132,6 +133,7 @@
 	> .tab:selected
 	.tab-label-text {
 	-fx-text-fill: #ffffff;
+	-fx-opacity: 1;
 }
 
 .modern-tab-pane
@@ -139,7 +141,8 @@
 	> .headers-region
 	> .tab:hover
 	.tab-label-text {
-	-fx-text-fill: #e5e7eb;
+	-fx-text-fill: #ffffff;
+	-fx-opacity: 0.9;
 }
 
 .modern-tab-pane > .tab-header-area > .tab-header-background {
@@ -469,91 +472,207 @@
 	-fx-text-fill: #94a3b8;
 }
 
-/* PIN Display - Khi đã tạo mã */
-.pin-result-box {
-	-fx-background-color: #3b82f6;
-	-fx-background-radius: 12;
-	-fx-padding: 20;
+/* ═══════════════════════════════════════════════════════════════════════════════
+   PIN SHARE - SEND ANYWHERE STYLE (V2)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Send - Trước khi chọn file */
+.pin-select-container {
+	-fx-padding: 30 20;
 }
 
-.pin-result-title {
-	-fx-font-size: 11;
-	-fx-font-weight: bold;
-	-fx-text-fill: rgba(255, 255, 255, 0.8);
-}
-
-.pin-code-display {
-	-fx-background-color: #ffffff;
-	-fx-background-radius: 10;
-	-fx-padding: 16 24;
-}
-
-.pin-code-text {
-	-fx-font-size: 32;
-	-fx-font-weight: bold;
-	-fx-text-fill: #3b82f6;
-	-fx-font-family: 'Consolas', 'Monaco', monospace;
-}
-
-.pin-file-info {
-	-fx-font-size: 12;
-	-fx-text-fill: rgba(255, 255, 255, 0.9);
-}
-
-.pin-timer-text {
-	-fx-font-size: 14;
-	-fx-font-weight: bold;
-	-fx-text-fill: #fef08a;
-	-fx-font-family: 'Consolas', monospace;
-}
-
-.pin-cancel-btn {
-	-fx-background-color: transparent;
-	-fx-text-fill: #ffffff;
-	-fx-font-weight: 600;
-	-fx-font-size: 12;
-	-fx-padding: 8 16;
-	-fx-background-radius: 6;
-	-fx-border-color: rgba(255, 255, 255, 0.5);
-	-fx-border-radius: 6;
-	-fx-border-width: 1;
+.send-icon-circle {
+	-fx-background-color: #f3f4f6;
+	-fx-background-radius: 50;
+	-fx-min-width: 80;
+	-fx-min-height: 80;
+	-fx-max-width: 80;
+	-fx-max-height: 80;
 	-fx-cursor: hand;
 }
 
-.pin-cancel-btn:hover {
-	-fx-background-color: rgba(255, 255, 255, 0.1);
+.send-icon-plus {
+	-fx-font-size: 36;
+	-fx-font-weight: 300;
+	-fx-text-fill: #9ca3af;
 }
 
-/* PIN Input - Nhập mã */
-.pin-input-container {
-	-fx-background-color: #f0fdf4;
-	-fx-background-radius: 14;
-	-fx-padding: 28;
-	-fx-border-color: #86efac;
-	-fx-border-radius: 14;
-	-fx-border-width: 2;
+.send-hint-text {
+	-fx-font-size: 14;
+	-fx-text-fill: #6b7280;
 }
 
-.pin-input {
-	-fx-background-color: #ffffff;
-	-fx-background-radius: 10;
-	-fx-border-color: #10b981;
-	-fx-border-radius: 10;
-	-fx-border-width: 2;
-	-fx-padding: 16 20;
+.btn-send-large {
+	-fx-background-color: #3b82f6;
+	-fx-text-fill: white;
+	-fx-font-size: 14;
+	-fx-font-weight: 600;
+	-fx-padding: 12 32;
+	-fx-background-radius: 8;
+	-fx-cursor: hand;
+}
+
+.btn-send-large:hover {
+	-fx-background-color: #2563eb;
+}
+
+/* Send - Sau khi tạo PIN */
+.pin-result-box-v2 {
+	-fx-padding: 20;
+}
+
+.pin-back-arrow {
+	-fx-font-size: 20;
+	-fx-text-fill: #6b7280;
+	-fx-cursor: hand;
+}
+
+.pin-back-arrow:hover {
+	-fx-text-fill: #374151;
+}
+
+.pin-waiting-title {
+	-fx-font-size: 18;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2937;
+}
+
+.pin-waiting-desc {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+}
+
+.pin-expiry-label {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+}
+
+.pin-timer-red {
+	-fx-font-size: 16;
+	-fx-font-weight: bold;
+	-fx-text-fill: #ef4444;
+	-fx-font-family: 'Consolas', monospace;
+}
+
+.pin-digits-box {
+	-fx-padding: 24 0;
+}
+
+.pin-digit-large {
+	-fx-font-size: 56;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2937;
+	-fx-font-family: 'Segoe UI', 'Arial', sans-serif;
+	-fx-letter-spacing: 16;
+	-fx-padding: 12 20;
+	-fx-background-color: #f9fafb;
+	-fx-background-radius: 12;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 12;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 8, 0, 0, 2);
+}
+
+.pin-file-box {
+	-fx-background-color: #f9fafb;
+	-fx-background-radius: 12;
+	-fx-padding: 16 24;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 12;
+}
+
+.pin-file-label {
+	-fx-font-size: 11;
+	-fx-text-fill: #9ca3af;
+}
+
+.pin-filename {
+	-fx-font-size: 14;
+	-fx-font-weight: 600;
+	-fx-text-fill: #374151;
+}
+
+.btn-cancel-outline {
+	-fx-background-color: transparent;
+	-fx-text-fill: #6b7280;
+	-fx-font-size: 12;
+	-fx-padding: 8 20;
+	-fx-background-radius: 6;
+	-fx-border-color: #d1d5db;
+	-fx-border-radius: 6;
+	-fx-cursor: hand;
+}
+
+.btn-cancel-outline:hover {
+	-fx-background-color: #fee2e2;
+	-fx-border-color: #fca5a5;
+	-fx-text-fill: #dc2626;
+}
+
+/* Receive - Nhập mã */
+.pin-receive-container {
+	-fx-padding: 30 20;
+}
+
+.receive-icon-circle {
+	-fx-background-color: #ecfdf5;
+	-fx-background-radius: 50;
+	-fx-min-width: 70;
+	-fx-min-height: 70;
+	-fx-max-width: 70;
+	-fx-max-height: 70;
+}
+
+.receive-icon-arrow {
 	-fx-font-size: 28;
 	-fx-font-weight: bold;
-	-fx-text-fill: #059669;
-	-fx-alignment: center;
-	-fx-font-family: 'Consolas', 'Monaco', monospace;
-	-fx-prompt-text-fill: #a7f3d0;
-	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.15), 8, 0, 0, 2);
+	-fx-text-fill: #10b981;
 }
 
-.pin-input:focused {
-	-fx-border-color: #059669;
+.receive-title {
+	-fx-font-size: 16;
+	-fx-font-weight: 600;
+	-fx-text-fill: #374151;
+}
+
+.pin-input-large {
+	-fx-background-color: #ffffff;
+	-fx-background-radius: 12;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 12;
 	-fx-border-width: 2;
-	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.25), 12, 0, 0, 3);
+	-fx-padding: 18 24;
+	-fx-font-size: 36;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2937;
+	-fx-alignment: center;
+	-fx-font-family: 'Segoe UI', 'Arial', sans-serif;
+	-fx-prompt-text-fill: #d1d5db;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 8, 0, 0, 2);
+}
+
+.pin-input-large:focused {
+	-fx-border-color: #10b981;
+	-fx-border-width: 2;
+	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.25), 14, 0, 0, 3);
+}
+
+.btn-receive-large {
+	-fx-background-color: #10b981;
+	-fx-text-fill: white;
+	-fx-font-size: 15;
+	-fx-font-weight: 600;
+	-fx-padding: 14 36;
+	-fx-background-radius: 10;
+	-fx-cursor: hand;
+}
+
+.btn-receive-large:hover {
+	-fx-background-color: #059669;
+}
+
+.receive-hint {
+	-fx-font-size: 12;
+	-fx-text-fill: #9ca3af;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
@@ -800,4 +919,195 @@
 
 .mode-toggle-btn:selected:hover {
 	-fx-background-color: #2563eb;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GLOBAL ANIMATIONS & TRANSITIONS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Smooth hover transitions for all buttons */
+.button {
+	-fx-cursor: hand;
+}
+
+/* Card hover effect */
+.card {
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 10, 0, 0, 2);
+}
+
+.card:hover {
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 16, 0, 0, 4);
+}
+
+/* TextField focus animations */
+.text-field {
+	-fx-background-color: #ffffff;
+	-fx-border-color: #d1d5db;
+	-fx-border-width: 1;
+	-fx-border-radius: 8;
+	-fx-background-radius: 8;
+	-fx-padding: 10 14;
+	-fx-font-size: 13;
+}
+
+.text-field:focused {
+	-fx-border-color: #3b82f6;
+	-fx-border-width: 2;
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.15), 8, 0, 0, 0);
+}
+
+.text-field:hover {
+	-fx-border-color: #9ca3af;
+}
+
+/* TextArea styling */
+.text-area {
+	-fx-background-color: #ffffff;
+	-fx-border-color: #d1d5db;
+	-fx-border-radius: 8;
+	-fx-background-radius: 8;
+}
+
+.text-area:focused {
+	-fx-border-color: #3b82f6;
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.15), 8, 0, 0, 0);
+}
+
+.text-area .content {
+	-fx-background-color: #ffffff;
+	-fx-background-radius: 8;
+}
+
+/* ListView hover effects */
+.list-view .list-cell:filled:hover {
+	-fx-background-color: #eff6ff;
+}
+
+.list-view .list-cell:filled:selected {
+	-fx-background-color: #dbeafe;
+	-fx-text-fill: #1e40af;
+}
+
+.list-view .list-cell:filled:selected:hover {
+	-fx-background-color: #bfdbfe;
+}
+
+/* Button press effect */
+.button:pressed {
+	-fx-scale-x: 0.98;
+	-fx-scale-y: 0.98;
+}
+
+/* Smooth icon buttons */
+.icon-btn {
+	-fx-background-color: transparent;
+	-fx-padding: 8;
+	-fx-background-radius: 6;
+	-fx-cursor: hand;
+}
+
+.icon-btn:hover {
+	-fx-background-color: #f3f4f6;
+}
+
+.icon-btn:pressed {
+	-fx-background-color: #e5e7eb;
+}
+
+/* Label hover for clickable labels */
+.clickable-label {
+	-fx-cursor: hand;
+}
+
+.clickable-label:hover {
+	-fx-opacity: 0.8;
+}
+
+/* Subtle pulse animation class for important elements */
+.pulse-subtle {
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.3), 12, 0, 0, 0);
+}
+
+/* PIN input enhanced focus */
+.pin-input-large:hover {
+	-fx-border-color: #9ca3af;
+}
+
+/* Send button hover lift effect */
+.btn-send-large:hover {
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.35), 12, 0, 0, 4);
+}
+
+.btn-send-large:pressed {
+	-fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.2), 6, 0, 0, 2);
+}
+
+/* Receive button hover lift effect */
+.btn-receive-large:hover {
+	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.35), 12, 0, 0, 4);
+}
+
+.btn-receive-large:pressed {
+	-fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.2), 6, 0, 0, 2);
+}
+
+/* Send icon circle hover */
+.send-icon-circle:hover {
+	-fx-background-color: #e5e7eb;
+}
+
+/* Back arrow hover */
+.pin-back-arrow:hover {
+	-fx-text-fill: #1f2937;
+	-fx-scale-x: 1.1;
+	-fx-scale-y: 1.1;
+}
+
+/* Status pill subtle animation */
+.status-pill {
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 1);
+}
+
+/* Info pill hover */
+.info-pill:hover {
+	-fx-background-color: #374151;
+}
+
+/* Scroll pane styling */
+.scroll-pane {
+	-fx-background-color: transparent;
+	-fx-background: transparent;
+}
+
+.scroll-pane > .viewport {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar:vertical {
+	-fx-background-color: transparent;
+	-fx-pref-width: 10;
+}
+
+.scroll-bar:vertical .thumb {
+	-fx-background-color: #cbd5e1;
+	-fx-background-radius: 5;
+}
+
+.scroll-bar:vertical .thumb:hover {
+	-fx-background-color: #94a3b8;
+}
+
+.scroll-bar:vertical .track {
+	-fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .increment-button,
+.scroll-bar:vertical .decrement-button {
+	-fx-pref-height: 0;
+	-fx-pref-width: 0;
+}
+
+/* Tab icon size */
+.tab-graphic Label {
+	-fx-font-size: 22;
 }

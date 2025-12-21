@@ -50,7 +50,7 @@ public class StandaloneRelayServer {
     public static void main(String[] args) {
         try {
             System.out.println("\n╔══════════════════════════════════════════════════╗");
-            System.out.println("║   🌐 STANDALONE RELAY SERVER FOR P2P FILE SHARE ║");
+            System.out.println("║   🌐 STANDALONE RELAY SERVER FOR P2P FILE SHARE  ║");
             System.out.println("╚══════════════════════════════════════════════════╝\n");
             
             // Đọc config từ environment variables

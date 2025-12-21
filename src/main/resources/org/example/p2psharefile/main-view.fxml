@@ -71,7 +71,7 @@
                 <Tab>
                     <graphic>
                         <VBox alignment="CENTER" spacing="4" styleClass="tab-graphic">
-                            <Label text="⚡" style="-fx-font-size: 20;"/>
+                            <Label text="⚡" style="-fx-font-size: 24;"/>
                             <Label text="Code" styleClass="tab-label-text"/>
                         </VBox>
                     </graphic>
@@ -105,36 +105,51 @@
                                     <Label text="3. Gửi mã cho bạn" styleClass="step-text"/>
                                 </HBox>
                                 
-                                <!-- File Selection -->
-                                <VBox spacing="14">
-                                    <Label text="Chọn file để chia sẻ:" styleClass="field-label"/>
-                                    <ListView fx:id="pinShareFileListView" prefHeight="100" maxHeight="100" 
-                                             styleClass="modern-list compact-list"/>
-                                    <Button text="📁  Chọn File" onAction="#handleSelectFileForPIN" 
-                                            maxWidth="Infinity" styleClass="btn-primary"/>
+                                <!-- Send Button (trước khi tạo PIN) -->
+                                <VBox fx:id="pinSelectPanel" spacing="20" alignment="CENTER" 
+                                      VBox.vgrow="ALWAYS" styleClass="pin-select-container">
+                                    
+                                    <StackPane styleClass="send-icon-circle">
+                                        <Label text="+" styleClass="send-icon-plus"/>
+                                    </StackPane>
+                                    
+                                    <Label text="Nhấn để chọn file chia sẻ" styleClass="send-hint-text"/>
+                                    
+                                    <Button text="Chọn File" onAction="#handleSelectFileForPIN" 
+                                            prefWidth="180" styleClass="btn-send-large"/>
                                 </VBox>
                                 
-                                <!-- PIN Display (khi đã tạo mã) -->
+                                <!-- PIN Display (khi đã tạo mã) - Style giống Send Anywhere -->
                                 <VBox fx:id="pinDisplayPanel" visible="false" spacing="16" 
-                                      styleClass="pin-result-box">
+                                      styleClass="pin-result-box-v2" VBox.vgrow="ALWAYS" alignment="CENTER">
                                     
-                                    <Label text="MÃ CHIA SẺ CỦA BẠN" styleClass="pin-result-title" 
-                                           style="-fx-alignment: center;" maxWidth="Infinity"/>
-                                    
-                                    <HBox alignment="CENTER" styleClass="pin-code-display">
-                                        <Label fx:id="pinLabel" text="000000" styleClass="pin-code-text"/>
+                                    <!-- Waiting indicator -->
+                                    <HBox alignment="CENTER" spacing="12">
+                                        <Label text="←" styleClass="pin-back-arrow" onMouseClicked="#handleCancelPIN"/>
+                                        <VBox spacing="2" alignment="CENTER">
+                                            <Label text="Đang chờ..." styleClass="pin-waiting-title"/>
+                                            <Label text="Nhập mã này ở thiết bị nhận" styleClass="pin-waiting-desc"/>
+                                        </VBox>
                                     </HBox>
                                     
-                                    <VBox spacing="8" alignment="CENTER">
-                                        <Label fx:id="pinFileNameLabel" text="filename.txt" styleClass="pin-file-info"/>
-                                        <HBox spacing="8" alignment="CENTER">
-                                            <Label text="Còn lại:" styleClass="pin-file-info"/>
-                                            <Label fx:id="pinExpiryLabel" text="10:00" styleClass="pin-timer-text"/>
-                                        </HBox>
-                                    </VBox>
+                                    <!-- Timer -->
+                                    <HBox alignment="CENTER" spacing="8">
+                                        <Label text="Hết hạn sau" styleClass="pin-expiry-label"/>
+                                        <Label fx:id="pinExpiryLabel" text="09:59" styleClass="pin-timer-red"/>
+                                    </HBox>
                                     
-                                    <Button text="✕  Hủy chia sẻ" onAction="#handleCancelPIN" 
-                                            maxWidth="Infinity" styleClass="pin-cancel-btn"/>
+                                    <!-- Big PIN digits - 6 ô riêng biệt -->
+                                    <HBox alignment="CENTER" spacing="10" styleClass="pin-digits-box">
+                                        <Label fx:id="pinLabel" text="000000" styleClass="pin-digit-large"/>
+                                    </HBox>
+                                    
+                                    <!-- File info + Cancel button cùng nhau ở giữa -->
+                                    <VBox spacing="12" alignment="CENTER" styleClass="pin-file-box">
+                                        <Label text="📄 File đang chia sẻ:" styleClass="pin-file-label"/>
+                                        <Label fx:id="pinFileNameLabel" text="filename.txt" styleClass="pin-filename"/>
+                                        <Button text="Hủy chia sẻ" onAction="#handleCancelPIN" 
+                                                prefWidth="140" styleClass="btn-cancel-outline"/>
+                                    </VBox>
                                 </VBox>
                             </VBox>
                             
@@ -162,23 +177,24 @@
                                     <Label text="3. Nhấn Nhận" styleClass="step-text"/>
                                 </HBox>
                                 
-                                <!-- PIN Input -->
-                                <VBox spacing="20" alignment="CENTER" VBox.vgrow="ALWAYS" 
-                                      styleClass="pin-input-container">
+                                <!-- PIN Input - Style cải tiến -->
+                                <VBox spacing="24" alignment="CENTER" VBox.vgrow="ALWAYS" 
+                                      styleClass="pin-receive-container">
                                     
-                                    <Label text="Nhập mã PIN (6 số):" styleClass="field-label"/>
+                                    <StackPane styleClass="receive-icon-circle">
+                                        <Label text="↓" styleClass="receive-icon-arrow"/>
+                                    </StackPane>
                                     
-                                    <TextField fx:id="pinInputField" promptText="000000" 
-                                              maxWidth="240" prefWidth="240" alignment="CENTER" styleClass="pin-input"/>
+                                    <Label text="Nhập mã 6 số" styleClass="receive-title"/>
                                     
-                                    <Label text="Mã có hiệu lực trong 10 phút" styleClass="hint-text-small"/>
+                                    <TextField fx:id="pinInputField" promptText="● ● ● ● ● ●" 
+                                              maxWidth="280" prefWidth="280" alignment="CENTER" styleClass="pin-input-large"/>
                                     
-                                    <Button fx:id="receiveButton" text="⬇  Nhận File" 
-                                            onAction="#handleReceiveByPIN" prefWidth="200" styleClass="btn-success"/>
+                                    <Button fx:id="receiveButton" text="Nhận File" 
+                                            onAction="#handleReceiveByPIN" prefWidth="180" styleClass="btn-receive-large"/>
+                                    
+                                    <Label text="File sẽ được lưu vào thư mục Downloads" styleClass="receive-hint"/>
                                 </VBox>
-                                
-                                <Label text="📂 File sẽ được lưu vào thư mục Downloads" 
-                                       styleClass="hint-text" style="-fx-alignment: center;" maxWidth="Infinity"/>
                             </VBox>
                             
                         </HBox>
@@ -191,7 +207,7 @@
                 <Tab>
                     <graphic>
                         <VBox alignment="CENTER" spacing="4" styleClass="tab-graphic">
-                            <Label text="📁" style="-fx-font-size: 20;"/>
+                            <Label text="📁" style="-fx-font-size: 24;"/>
                             <Label text="File" styleClass="tab-label-text"/>
                         </VBox>
                     </graphic>
@@ -236,7 +252,7 @@
                 <Tab>
                     <graphic>
                         <VBox alignment="CENTER" spacing="4" styleClass="tab-graphic">
-                            <Label text="🔍" style="-fx-font-size: 20;"/>
+                            <Label text="🔍" style="-fx-font-size: 24;"/>
                             <Label text="Tìm" styleClass="tab-label-text"/>
                         </VBox>
                     </graphic>

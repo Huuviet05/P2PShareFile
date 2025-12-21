@@ -56,7 +56,7 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private Label logLabel;
     
     // Tab 4: Share Code (PIN)
-    @FXML private ListView<FileInfo> pinShareFileListView;
+    @FXML private VBox pinSelectPanel;
     @FXML private VBox pinDisplayPanel;
     @FXML private Label pinLabel;
     @FXML private Label pinFileNameLabel;
@@ -122,7 +122,6 @@ public class MainController implements P2PService.P2PServiceListener {
         peerListView.setItems(peerList);
         sharedFilesListView.setItems(sharedFilesDisplay);
         searchResultsListView.setItems(searchResults);
-        pinShareFileListView.setItems(sharedFilesList);
         
         // Setup custom cell factory cho sharedFilesListView với nút Hủy
         setupSharedFilesListView();
@@ -861,6 +860,8 @@ public class MainController implements P2PService.P2PServiceListener {
                 tempDir.mkdirs();
                 File tempFile = new File(tempDir, fileInfo.getFileName());
                 
+                log("📡 Đang tải preview: " + fileInfo.getFileName());
+                
                 // Download từ relay
                 RelayClient relayClient = p2pService.getRelayClient();
                 if (relayClient == null) {
@@ -876,6 +877,9 @@ public class MainController implements P2PService.P2PServiceListener {
                 if (!success || !tempFile.exists()) {
                     throw new Exception("Không thể tải file từ relay server");
                 }
+                
+                // Log file size để debug
+                log("✓ Đã tải xong: " + tempFile.getName() + " (" + formatBytes(tempFile.length()) + ")");
                 
                 // Tạo preview từ file local
                 PreviewManifest manifest = PreviewGenerator.generateManifest(tempFile, peerInfo.getPeerId());
@@ -989,11 +993,22 @@ public class MainController implements P2PService.P2PServiceListener {
         box.setAlignment(javafx.geometry.Pos.CENTER);
         
         try {
-            Image image = new Image(imageFile.toURI().toString(), 500, 400, true, true);
+            // Đọc file trực tiếp bằng FileInputStream để đảm bảo dữ liệu đúng
+            java.io.FileInputStream fis = new java.io.FileInputStream(imageFile);
+            Image image = new Image(fis);
+            fis.close();
+            
+            // Check if image loaded successfully
+            if (image.isError()) {
+                box.getChildren().add(new Label("❌ Không thể load hình ảnh: " + 
+                    (image.getException() != null ? image.getException().getMessage() : "Unknown error")));
+                return new ScrollPane(box);
+            }
+            
             ImageView imageView = new ImageView(image);
             imageView.setPreserveRatio(true);
-            imageView.setFitWidth(500);
-            imageView.setFitHeight(400);
+            imageView.setFitWidth(Math.min(500, image.getWidth()));
+            imageView.setFitHeight(Math.min(400, image.getHeight()));
             
             box.getChildren().add(imageView);
             
@@ -1003,8 +1018,14 @@ public class MainController implements P2PService.P2PServiceListener {
             dimLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
             box.getChildren().add(dimLabel);
             
+            // File size
+            Label sizeLabel = new Label("File: " + formatBytes(imageFile.length()));
+            sizeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #888;");
+            box.getChildren().add(sizeLabel);
+            
         } catch (Exception e) {
             box.getChildren().add(new Label("❌ Không thể hiển thị hình ảnh: " + e.getMessage()));
+            e.printStackTrace();
         }
         
         return new ScrollPane(box);
@@ -1286,31 +1307,15 @@ public class MainController implements P2PService.P2PServiceListener {
         
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Chọn file để chia sẻ bằng mã PIN");
-        File file = fileChooser.showOpenDialog(pinShareFileListView.getScene().getWindow());
+        File file = fileChooser.showOpenDialog(pinSelectPanel.getScene().getWindow());
         
         if (file != null) {
-            // Add to shared files first (will upload to relay in background if in relay mode)
-            p2pService.addSharedFile(file);
-            refreshSharedFiles();
-            
-            // Tìm FileInfo đã được add (có thể có RelayFileInfo nếu upload xong)
-            FileInfo fileInfo = null;
-            for (FileInfo fi : p2pService.getSharedFiles()) {
-                if (fi.getFileName().equals(file.getName()) && 
-                    fi.getFilePath().equals(file.getAbsolutePath())) {
-                    fileInfo = fi;
-                    break;
-                }
-            }
-            
-            // Nếu không tìm thấy, tạo mới
-            if (fileInfo == null) {
-                fileInfo = new FileInfo(
-                    file.getName(),
-                    file.length(),
-                    file.getAbsolutePath()
-                );
-            }
+            // Tạo FileInfo mới trực tiếp (không thêm vào shared files)
+            FileInfo fileInfo = new FileInfo(
+                file.getName(),
+                file.length(),
+                file.getAbsolutePath()
+            );
             
             // Create PIN code for this file (trong background thread vì có thể phải upload lên relay)
             final FileInfo finalFileInfo = fileInfo;
@@ -1324,10 +1329,13 @@ public class MainController implements P2PService.P2PServiceListener {
                         if (session != null) {
                             currentPINSession = session;
                             
-                            // Display PIN in UI
+                            // Display PIN in UI - hide select panel, show display panel
                             pinLabel.setText(session.getPin());
                             pinFileNameLabel.setText(finalFileInfo.getFileName());
+                            pinSelectPanel.setVisible(false);
+                            pinSelectPanel.setManaged(false);
                             pinDisplayPanel.setVisible(true);
+                            pinDisplayPanel.setManaged(true);
                             
                             // Start countdown timer
                             startPINExpiryTimer();
@@ -1360,15 +1368,20 @@ public class MainController implements P2PService.P2PServiceListener {
         if (currentPINSession != null) {
             p2pService.cancelPIN(currentPINSession.getPin());
             currentPINSession = null;
-            pinDisplayPanel.setVisible(false);
-            
-            if (pinExpiryTimeline != null) {
-                pinExpiryTimeline.stop();
-                pinExpiryTimeline = null;
-            }
-            
-            log("❌ Đã hủy mã PIN");
         }
+        
+        // Show select panel, hide display panel
+        pinDisplayPanel.setVisible(false);
+        pinDisplayPanel.setManaged(false);
+        pinSelectPanel.setVisible(true);
+        pinSelectPanel.setManaged(true);
+        
+        if (pinExpiryTimeline != null) {
+            pinExpiryTimeline.stop();
+            pinExpiryTimeline = null;
+        }
+        
+        log("❌ Đã hủy mã PIN");
     }
     
     /**
@@ -1430,20 +1443,22 @@ public class MainController implements P2PService.P2PServiceListener {
             if (currentPINSession != null) {
                 if (currentPINSession.isExpired()) {
                     // PIN expired
-                    pinExpiryLabel.setText("⏰ Đã hết hạn!");
-                    pinExpiryLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                    pinExpiryLabel.setText("Đã hết hạn!");
                     pinExpiryTimeline.stop();
                     
                     Platform.runLater(() -> {
                         showInfo("Mã PIN đã hết hạn");
+                        // Show select panel, hide display panel
                         pinDisplayPanel.setVisible(false);
+                        pinDisplayPanel.setManaged(false);
+                        pinSelectPanel.setVisible(true);
+                        pinSelectPanel.setManaged(true);
                         currentPINSession = null;
                     });
                 } else {
-                    // Update remaining time
+                    // Update remaining time - format MM:SS
                     String timeLeft = currentPINSession.getRemainingTimeFormatted();
-                    pinExpiryLabel.setText("⏱ Hết hạn sau: " + timeLeft);
-                    pinExpiryLabel.setStyle("-fx-text-fill: #666;");
+                    pinExpiryLabel.setText(timeLeft);
                 }
             }
         }));
