@@ -47,7 +47,6 @@ import java.util.logging.Level;
 public class RelayClient {
     
     private static final Logger LOGGER = Logger.getLogger(RelayClient.class.getName());
-    private static final String BOUNDARY = "----RelayUploadBoundary" + System.currentTimeMillis();
     
     private final RelayConfig config;
     private final SecretKey encryptionKey;
@@ -301,35 +300,7 @@ public class RelayClient {
         }
     }
     
-    /**
-     * Viết multipart form data - KHÔNG SỬ DỤNG NỮA
-     * Giữ lại để tham khảo
-     */
-    @SuppressWarnings("unused")
-    private void writeMultipartData(OutputStream os, byte[] data, int length, int chunkIndex) 
-            throws IOException {
-        
-        PrintWriter writer = new PrintWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8), true);
-        
-        // Metadata
-        writer.append("--").append(BOUNDARY).append("\r\n");
-        writer.append("Content-Disposition: form-data; name=\"chunkIndex\"\r\n\r\n");
-        writer.append(String.valueOf(chunkIndex)).append("\r\n");
-        
-        // File chunk
-        writer.append("--").append(BOUNDARY).append("\r\n");
-        writer.append("Content-Disposition: form-data; name=\"chunk\"; filename=\"chunk_")
-              .append(String.valueOf(chunkIndex)).append("\"\r\n");
-        writer.append("Content-Type: application/octet-stream\r\n\r\n");
-        writer.flush();
-        
-        os.write(data, 0, length);
-        os.flush();
-        
-        writer.append("\r\n");
-        writer.append("--").append(BOUNDARY).append("--\r\n");
-        writer.flush();
-    }
+
     
     /**
      * Download file từ relay server
@@ -664,14 +635,22 @@ public class RelayClient {
      * Extract field value từ JSON string
      */
     private String extractJsonFieldValue(String json, String field) {
+        // Try string value first: "field":"value"
         String pattern = "\"" + field + "\":\"([^\"]+)\"";
         java.util.regex.Pattern p = java.util.regex.Pattern.compile(pattern);
         java.util.regex.Matcher m = p.matcher(json);
         if (m.find()) {
             return m.group(1);
         }
-        // Try without quotes (for numbers)
+        // Try number value: "field":123
         pattern = "\"" + field + "\":([0-9]+)";
+        p = java.util.regex.Pattern.compile(pattern);
+        m = p.matcher(json);
+        if (m.find()) {
+            return m.group(1);
+        }
+        // Try boolean value: "field":true or "field":false
+        pattern = "\"" + field + "\":(true|false)";
         p = java.util.regex.Pattern.compile(pattern);
         m = p.matcher(json);
         if (m.find()) {

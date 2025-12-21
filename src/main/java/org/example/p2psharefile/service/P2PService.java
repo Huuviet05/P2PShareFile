@@ -634,6 +634,13 @@ public class P2PService {
         return running;
     }
     
+    /**
+     * Lấy RelayClient instance để download/upload
+     */
+    public org.example.p2psharefile.network.RelayClient getRelayClient() {
+        return fileTransferService != null ? fileTransferService.getRelayClient() : null;
+    }
+    
     // ========== UltraView Preview Methods ==========
     
     /**

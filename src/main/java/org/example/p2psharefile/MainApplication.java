@@ -43,13 +43,14 @@ public class MainApplication extends Application {
         System.out.println("=".repeat(60));
         System.out.println("🎉 P2P SHARE FILE APPLICATION");
         System.out.println("=".repeat(60));
-        System.out.println("📚 Ứng dụng chia sẻ file P2P thuần túy");
+        System.out.println("📚 Ứng dụng chia sẻ file Peer-to-Peer");
         System.out.println("✨ Tính năng:");
-        System.out.println("   - Peer Discovery (TCP - kết nối trực tiếp)");
-        System.out.println("   - File Search (Flooding Algorithm)");
-        System.out.println("   - File Transfer (TCP)");
-        System.out.println("   - Compression (GZIP)");
-        System.out.println("   - Encryption (AES-256)");
+        System.out.println("   - P2P Mode: Kết nối trực tiếp LAN (TCP + TLS)");
+        System.out.println("   - Relay Mode: Kết nối qua Internet (HTTP Relay)");
+        System.out.println("   - File Transfer với Compression & Encryption");
+        System.out.println("   - PIN Code Sharing (Send Anywhere style)");
+        System.out.println("   - UltraView Preview (Image, PDF, Archive)");
+        System.out.println("   - Security: TLS + AES-256 + ECDSA Signatures");
         System.out.println("=".repeat(60));
     }
 
