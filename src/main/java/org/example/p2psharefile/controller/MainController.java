@@ -156,17 +156,27 @@ public class MainController implements P2PService.P2PServiceListener {
             }
         });
         
-        // Selection listener cho search results để enable/disable preview/download buttons
+        // Selection listener cho search results để enable/disable preview/download buttons và hiển thị action box
         searchResultsListView.getSelectionModel().selectedItemProperty().addListener(
             (observable, oldValue, newValue) -> {
                 boolean hasSelection = newValue != null;
                 boolean isServiceReady = p2pService != null;
                 
+                // Hiển thị/Ẩn searchActionsBox khi có/không có selection
+                if (searchActionsBox != null) {
+                    searchActionsBox.setVisible(hasSelection);
+                    searchActionsBox.setManaged(hasSelection);
+                }
+                
                 // Download: luôn enable nếu có selection và service ready
-                downloadButton.setDisable(!hasSelection || !isServiceReady);
+                if (downloadButton != null) {
+                    downloadButton.setDisable(!hasSelection || !isServiceReady);
+                }
                 
                 // Preview: luôn enable nếu có selection (relay sẽ hiển thị info dialog)
-                previewButton.setDisable(!hasSelection || !isServiceReady);
+                if (previewButton != null) {
+                    previewButton.setDisable(!hasSelection || !isServiceReady);
+                }
             }
         );
         
@@ -248,6 +258,12 @@ public class MainController implements P2PService.P2PServiceListener {
         previewButton.setDisable(true);
         downloadButton.setDisable(true);
         receiveButton.setDisable(true);
+        
+        // Ẩn searchActionsBox
+        if (searchActionsBox != null) {
+            searchActionsBox.setVisible(false);
+            searchActionsBox.setManaged(false);
+        }
         
         peerList.clear();
         searchResults.clear();
@@ -351,6 +367,12 @@ public class MainController implements P2PService.P2PServiceListener {
             searchResults.clear();
             peerCountLabel.setText("0 Peers");
             
+            // Ẩn searchActionsBox khi xóa kết quả tìm kiếm
+            if (searchActionsBox != null) {
+                searchActionsBox.setVisible(false);
+                searchActionsBox.setManaged(false);
+            }
+            
             if (isP2PMode) {
                 // P2P mode: Preview enabled, search only LAN
                 statusLabel.setText("P2P Mode (LAN)");
@@ -444,6 +466,13 @@ public class MainController implements P2PService.P2PServiceListener {
         }
         
         searchResults.clear();
+        
+        // Ẩn searchActionsBox khi bắt đầu tìm kiếm mới
+        if (searchActionsBox != null) {
+            searchActionsBox.setVisible(false);
+            searchActionsBox.setManaged(false);
+        }
+        
         searchButton.setDisable(true);
         log("🔍 Đang tìm kiếm: " + query);
         
@@ -843,358 +872,179 @@ public class MainController implements P2PService.P2PServiceListener {
     }
     
     /**
-     * Hiển thị dialog preview cho file từ Relay Server
-     * Download file tạm và tạo preview giống như P2P
+     * Hiển thị dialog thông tin chi tiết file từ Relay Server
+     * (Relay mode không hỗ trợ preview trực tiếp, chỉ hiển thị thông tin)
      */
     private void showRelayFileInfoDialog(FileInfo fileInfo, PeerInfo peerInfo) {
-        // Kiểm tra xem có RelayFileInfo không
-        if (fileInfo.getRelayFileInfo() == null) {
-            showRelayBasicInfoDialog(fileInfo, peerInfo);
-            return;
-        }
-        
-        // Hiển thị dialog loading
-        Dialog<Void> loadingDialog = new Dialog<>();
-        loadingDialog.setTitle("Đang tải preview...");
-        loadingDialog.setHeaderText("📡 Đang tải file từ Relay Server");
-        
-        ProgressIndicator progress = new ProgressIndicator();
-        progress.setStyle("-fx-min-width: 50; -fx-min-height: 50;");
-        
-        VBox loadingContent = new VBox(15);
-        loadingContent.setAlignment(javafx.geometry.Pos.CENTER);
-        loadingContent.setPadding(new javafx.geometry.Insets(30));
-        loadingContent.getChildren().addAll(
-            progress,
-            new Label("Đang tải " + fileInfo.getFileName() + " để xem preview...")
-        );
-        
-        loadingDialog.getDialogPane().setContent(loadingContent);
-        loadingDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
-        
-        // Download trong background thread
-        new Thread(() -> {
-            try {
-                // Tạo temp file
-                File tempDir = new File(System.getProperty("java.io.tmpdir"), "p2p-preview");
-                tempDir.mkdirs();
-                File tempFile = new File(tempDir, fileInfo.getFileName());
-                
-                log("📡 Đang tải preview: " + fileInfo.getFileName());
-                
-                // Download từ relay
-                RelayClient relayClient = p2pService.getRelayClient();
-                if (relayClient == null) {
-                    throw new Exception("RelayClient không khả dụng");
-                }
-                
-                boolean success = relayClient.downloadFile(
-                    fileInfo.getRelayFileInfo(), 
-                    tempFile, 
-                    null  // No progress listener for preview
-                );
-                
-                if (!success || !tempFile.exists()) {
-                    throw new Exception("Không thể tải file từ relay server");
-                }
-                
-                // Log file size để debug
-                log("✓ Đã tải xong: " + tempFile.getName() + " (" + formatBytes(tempFile.length()) + ")");
-                
-                // Tạo preview từ file local
-                PreviewManifest manifest = PreviewGenerator.generateManifest(tempFile, peerInfo.getPeerId());
-                
-                Platform.runLater(() -> {
-                    loadingDialog.close();
-                    showRelayPreviewDialog(fileInfo, peerInfo, manifest, tempFile);
-                });
-                
-            } catch (Exception e) {
-                Platform.runLater(() -> {
-                    loadingDialog.close();
-                    // Fallback về basic info dialog
-                    showRelayBasicInfoDialog(fileInfo, peerInfo);
-                    log("⚠ Không thể tải preview: " + e.getMessage());
-                });
-            }
-        }).start();
-        
-        loadingDialog.showAndWait();
-    }
-    
-    /**
-     * Hiển thị dialog preview thực sự cho relay file (sau khi đã download)
-     */
-    private void showRelayPreviewDialog(FileInfo fileInfo, PeerInfo peerInfo, PreviewManifest manifest, File tempFile) {
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Preview - " + fileInfo.getFileName());
-        dialog.setHeaderText("📡 Xem trước file từ Relay Server");
+        dialog.setTitle("📋 Thông tin File - " + fileInfo.getFileName());
+        dialog.setHeaderText(null);
         
-        VBox content = new VBox(15);
-        content.setPadding(new javafx.geometry.Insets(20));
+        VBox content = new VBox(16);
+        content.setPadding(new javafx.geometry.Insets(24));
         content.setStyle("-fx-background-color: white;");
         
-        // File info
-        VBox infoBox = new VBox(5);
-        infoBox.getChildren().addAll(
-            new Label("📄 File: " + fileInfo.getFileName()),
-            new Label("📊 Size: " + fileInfo.getFormattedSize()),
-            new Label("👤 Từ: " + peerInfo.getDisplayName()),
-            new Label("🏷️ Type: " + manifest.getMimeType())
-        );
-        infoBox.setStyle("-fx-padding: 10; -fx-background-color: #f0f4f8; -fx-background-radius: 5;");
-        content.getChildren().add(infoBox);
+        // Header với icon
+        HBox header = new HBox(12);
+        header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Label iconLabel = new Label(getFileIcon(fileInfo.getFileName()));
+        iconLabel.setStyle("-fx-font-size: 48px;");
         
-        // Preview tabs
-        TabPane previewTabs = new TabPane();
-        previewTabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        VBox headerText = new VBox(4);
+        Label fileNameLabel = new Label(fileInfo.getFileName());
+        fileNameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #1f2937;");
+        fileNameLabel.setWrapText(true);
         
-        boolean hasRealPreview = false;
+        Label sourceLabel = new Label("📡 Từ Relay Server");
+        sourceLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #3b82f6;");
         
-        // Image preview
-        boolean isImageFile = manifest.getMimeType() != null && manifest.getMimeType().startsWith("image/");
-        if (isImageFile) {
-            Tab imageTab = new Tab("🖼️ Hình ảnh");
-            imageTab.setContent(createLocalImagePreview(tempFile));
-            previewTabs.getTabs().add(imageTab);
-            hasRealPreview = true;
-        }
+        headerText.getChildren().addAll(fileNameLabel, sourceLabel);
+        header.getChildren().addAll(iconLabel, headerText);
+        content.getChildren().add(header);
         
-        // Text/Document preview
-        if (manifest.hasPreviewType(PreviewManifest.PreviewType.TEXT_SNIPPET)) {
-            Tab textTab = new Tab("📄 Nội dung");
-            textTab.setContent(createLocalTextPreview(tempFile, manifest));
-            previewTabs.getTabs().add(textTab);
-            hasRealPreview = true;
-        }
+        // Separator
+        Separator sep = new Separator();
+        sep.setStyle("-fx-padding: 8 0;");
+        content.getChildren().add(sep);
         
-        // Archive preview
-        if (manifest.hasPreviewType(PreviewManifest.PreviewType.ARCHIVE_LISTING)) {
-            Tab archiveTab = new Tab("📦 Danh sách file");
-            archiveTab.setContent(createLocalArchivePreview(tempFile));
-            previewTabs.getTabs().add(archiveTab);
-            hasRealPreview = true;
-        }
+        // Thông tin chi tiết
+        VBox infoSection = new VBox(10);
+        infoSection.setStyle("-fx-padding: 16; -fx-background-color: #f8fafc; -fx-background-radius: 8;");
         
-        // Fallback metadata
-        if (!hasRealPreview) {
-            Tab metadataTab = new Tab("ℹ️ Thông tin");
-            metadataTab.setContent(createMetadataPreview(manifest));
-            previewTabs.getTabs().add(metadataTab);
-        }
+        // Kích thước file
+        HBox sizeRow = createInfoRow("📊 Kích thước", fileInfo.getFormattedSize());
+        infoSection.getChildren().add(sizeRow);
         
-        content.getChildren().add(previewTabs);
+        // Người chia sẻ
+        HBox ownerRow = createInfoRow("👤 Người chia sẻ", peerInfo.getDisplayName());
+        infoSection.getChildren().add(ownerRow);
         
-        // Note về temp file
-        Label noteLabel = new Label("💡 Preview được tạo từ file tạm. Nhấn 'Tải về' để lưu vĩnh viễn.");
-        noteLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #888;");
-        content.getChildren().add(noteLabel);
+        // Loại file
+        String fileType = getFileTypeName(fileInfo.getFileName());
+        HBox typeRow = createInfoRow("🏷️ Loại file", fileType);
+        infoSection.getChildren().add(typeRow);
         
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-        dialog.getDialogPane().setPrefSize(700, 600);
-        
-        dialog.showAndWait();
-        
-        // Clean up temp file after dialog closed
-        try {
-            if (tempFile.exists()) {
-                tempFile.delete();
-            }
-        } catch (Exception ignored) {}
-    }
-    
-    /**
-     * Tạo image preview từ file local
-     */
-    private javafx.scene.Node createLocalImagePreview(File imageFile) {
-        VBox box = new VBox(10);
-        box.setPadding(new javafx.geometry.Insets(10));
-        box.setAlignment(javafx.geometry.Pos.CENTER);
-        
-        try {
-            // Đọc file trực tiếp bằng FileInputStream để đảm bảo dữ liệu đúng
-            java.io.FileInputStream fis = new java.io.FileInputStream(imageFile);
-            Image image = new Image(fis);
-            fis.close();
-            
-            // Check if image loaded successfully
-            if (image.isError()) {
-                box.getChildren().add(new Label("❌ Không thể load hình ảnh: " + 
-                    (image.getException() != null ? image.getException().getMessage() : "Unknown error")));
-                return new ScrollPane(box);
-            }
-            
-            ImageView imageView = new ImageView(image);
-            imageView.setPreserveRatio(true);
-            imageView.setFitWidth(Math.min(500, image.getWidth()));
-            imageView.setFitHeight(Math.min(400, image.getHeight()));
-            
-            box.getChildren().add(imageView);
-            
-            // Image dimensions
-            Label dimLabel = new Label(String.format("Kích thước: %.0f x %.0f px", 
-                image.getWidth(), image.getHeight()));
-            dimLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
-            box.getChildren().add(dimLabel);
-            
-            // File size
-            Label sizeLabel = new Label("File: " + formatBytes(imageFile.length()));
-            sizeLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #888;");
-            box.getChildren().add(sizeLabel);
-            
-        } catch (Exception e) {
-            box.getChildren().add(new Label("❌ Không thể hiển thị hình ảnh: " + e.getMessage()));
-            e.printStackTrace();
-        }
-        
-        return new ScrollPane(box);
-    }
-    
-    /**
-     * Tạo text preview từ file local
-     */
-    private javafx.scene.Node createLocalTextPreview(File file, PreviewManifest manifest) {
-        VBox box = new VBox(10);
-        box.setPadding(new javafx.geometry.Insets(10));
-        
-        try {
-            String textContent = "";
-            
-            // Check if it's a PDF
-            if (file.getName().toLowerCase().endsWith(".pdf")) {
-                try {
-                    org.apache.pdfbox.pdmodel.PDDocument doc = org.apache.pdfbox.Loader.loadPDF(file);
-                    org.apache.pdfbox.text.PDFTextStripper stripper = new org.apache.pdfbox.text.PDFTextStripper();
-                    stripper.setStartPage(1);
-                    stripper.setEndPage(Math.min(5, doc.getNumberOfPages())); // First 5 pages
-                    textContent = stripper.getText(doc);
-                    doc.close();
-                    
-                    // Truncate if too long
-                    if (textContent.length() > 5000) {
-                        textContent = textContent.substring(0, 5000) + "\n\n... [Đã cắt bớt] ...";
-                    }
-                } catch (Exception e) {
-                    textContent = "Không thể đọc PDF: " + e.getMessage();
-                }
-            } else {
-                // Regular text file
-                java.nio.file.Path path = file.toPath();
-                java.util.List<String> lines = java.nio.file.Files.readAllLines(path, java.nio.charset.StandardCharsets.UTF_8);
-                
-                int maxLines = Math.min(100, lines.size());
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < maxLines; i++) {
-                    sb.append(lines.get(i)).append("\n");
-                }
-                if (lines.size() > maxLines) {
-                    sb.append("\n... [Còn ").append(lines.size() - maxLines).append(" dòng nữa] ...");
-                }
-                textContent = sb.toString();
-            }
-            
-            TextArea textArea = new TextArea(textContent);
-            textArea.setEditable(false);
-            textArea.setWrapText(true);
-            textArea.setStyle("-fx-font-family: 'Consolas', 'Monaco', monospace; -fx-font-size: 12px;");
-            textArea.setPrefHeight(400);
-            
-            box.getChildren().add(textArea);
-            
-        } catch (Exception e) {
-            box.getChildren().add(new Label("❌ Không thể đọc nội dung: " + e.getMessage()));
-        }
-        
-        return box;
-    }
-    
-    /**
-     * Tạo archive listing preview từ file local
-     */
-    private javafx.scene.Node createLocalArchivePreview(File archiveFile) {
-        VBox box = new VBox(10);
-        box.setPadding(new javafx.geometry.Insets(10));
-        
-        try {
-            java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile(archiveFile);
-            java.util.Enumeration<? extends java.util.zip.ZipEntry> entries = zipFile.entries();
-            
-            ListView<String> listView = new ListView<>();
-            int count = 0;
-            while (entries.hasMoreElements() && count < 100) {
-                java.util.zip.ZipEntry entry = entries.nextElement();
-                String icon = entry.isDirectory() ? "📁" : "📄";
-                String size = entry.isDirectory() ? "" : " (" + formatBytes(entry.getSize()) + ")";
-                listView.getItems().add(icon + " " + entry.getName() + size);
-                count++;
-            }
-            
-            zipFile.close();
-            
-            Label countLabel = new Label("📦 " + listView.getItems().size() + " items trong archive");
-            countLabel.setStyle("-fx-font-weight: bold;");
-            
-            box.getChildren().addAll(countLabel, listView);
-            
-        } catch (Exception e) {
-            box.getChildren().add(new Label("❌ Không thể đọc archive: " + e.getMessage()));
-        }
-        
-        return box;
-    }
-    
-    /**
-     * Hiển thị dialog thông tin cơ bản (fallback khi không thể tạo preview)
-     */
-    private void showRelayBasicInfoDialog(FileInfo fileInfo, PeerInfo peerInfo) {
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Thông tin File - " + fileInfo.getFileName());
-        dialog.setHeaderText("📡 File từ Relay Server");
-        
-        VBox content = new VBox(12);
-        content.setPadding(new javafx.geometry.Insets(20));
-        content.setStyle("-fx-background-color: white;");
-        
-        // Header
-        Label headerLabel = new Label("📋 Thông tin file từ Relay Server");
-        headerLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #3b82f6;");
-        content.getChildren().add(headerLabel);
-        
-        // File info
-        VBox infoBox = new VBox(8);
-        infoBox.setStyle("-fx-padding: 15; -fx-background-color: #f0f4f8; -fx-background-radius: 8;");
-        
-        infoBox.getChildren().addAll(
-            new Label("📄 Tên file: " + fileInfo.getFileName()),
-            new Label("📊 Kích thước: " + fileInfo.getFormattedSize()),
-            new Label("👤 Người chia sẻ: " + peerInfo.getDisplayName())
-        );
-        
+        // Hash (nếu có)
         if (fileInfo.getFileHash() != null && !fileInfo.getFileHash().isEmpty()) {
-            String shortHash = fileInfo.getFileHash().length() > 16 
-                ? fileInfo.getFileHash().substring(0, 16) + "..." 
+            String shortHash = fileInfo.getFileHash().length() > 20 
+                ? fileInfo.getFileHash().substring(0, 20) + "..." 
                 : fileInfo.getFileHash();
-            infoBox.getChildren().add(new Label("🔐 Hash: " + shortHash));
+            HBox hashRow = createInfoRow("🔐 Hash", shortHash);
+            infoSection.getChildren().add(hashRow);
         }
         
-        content.getChildren().add(infoBox);
+        // RelayFileInfo nếu có
+        if (fileInfo.getRelayFileInfo() != null) {
+            RelayFileInfo relayInfo = fileInfo.getRelayFileInfo();
+            if (relayInfo.getUploadId() != null) {
+                String shortId = relayInfo.getUploadId().length() > 12 
+                    ? relayInfo.getUploadId().substring(0, 12) + "..." 
+                    : relayInfo.getUploadId();
+                HBox idRow = createInfoRow("🆔 File ID", shortId);
+                infoSection.getChildren().add(idRow);
+            }
+        }
         
-        // Note
-        Label noteLabel = new Label(
-            "⚠️ Không thể tạo preview cho file này.\n\n" +
-            "📥 Nhấn 'Tải về' để download file về máy và xem nội dung.\n\n" +
-            "💡 File được truyền an toàn qua HTTPS."
+        content.getChildren().add(infoSection);
+        
+        // Note về Relay mode
+        VBox noteBox = new VBox(8);
+        noteBox.setStyle("-fx-padding: 12; -fx-background-color: #eff6ff; -fx-background-radius: 8; -fx-border-color: #bfdbfe; -fx-border-radius: 8;");
+        
+        Label noteTitle = new Label("ℹ️ Chế độ Relay");
+        noteTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #1d4ed8;");
+        
+        Label noteText = new Label(
+            "• Xem trước nội dung không khả dụng trong chế độ Relay\n" +
+            "• File được truyền an toàn qua HTTPS\n" +
+            "• Nhấn 'Tải về' để download file về máy"
         );
-        noteLabel.setWrapText(true);
-        noteLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666; -fx-padding: 10 0 0 0;");
-        content.getChildren().add(noteLabel);
+        noteText.setWrapText(true);
+        noteText.setStyle("-fx-font-size: 11px; -fx-text-fill: #3b82f6;");
+        
+        noteBox.getChildren().addAll(noteTitle, noteText);
+        content.getChildren().add(noteBox);
         
         dialog.getDialogPane().setContent(content);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK);
-        dialog.getDialogPane().setPrefSize(450, 350);
+        dialog.getDialogPane().setPrefSize(480, 420);
+        
+        // Style cho button
+        dialog.getDialogPane().lookupButton(ButtonType.OK).setStyle(
+            "-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 24;"
+        );
         
         dialog.showAndWait();
+    }
+    
+    /**
+     * Tạo một hàng thông tin với label và value
+     */
+    private HBox createInfoRow(String label, String value) {
+        HBox row = new HBox(8);
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        
+        Label labelNode = new Label(label + ":");
+        labelNode.setStyle("-fx-font-weight: bold; -fx-text-fill: #4b5563; -fx-min-width: 120;");
+        
+        Label valueNode = new Label(value);
+        valueNode.setStyle("-fx-text-fill: #1f2937;");
+        valueNode.setWrapText(true);
+        
+        row.getChildren().addAll(labelNode, valueNode);
+        return row;
+    }
+    
+    /**
+     * Lấy icon phù hợp cho loại file
+     */
+    private String getFileIcon(String fileName) {
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".pdf")) return "📕";
+        if (lower.endsWith(".doc") || lower.endsWith(".docx")) return "📘";
+        if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) return "📗";
+        if (lower.endsWith(".ppt") || lower.endsWith(".pptx")) return "📙";
+        if (lower.endsWith(".txt") || lower.endsWith(".md")) return "📝";
+        if (lower.endsWith(".zip") || lower.endsWith(".rar") || lower.endsWith(".7z")) return "📦";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif")) return "🖼️";
+        if (lower.endsWith(".mp3") || lower.endsWith(".wav") || lower.endsWith(".flac")) return "🎵";
+        if (lower.endsWith(".mp4") || lower.endsWith(".avi") || lower.endsWith(".mkv")) return "🎬";
+        if (lower.endsWith(".java") || lower.endsWith(".py") || lower.endsWith(".js")) return "💻";
+        if (lower.endsWith(".html") || lower.endsWith(".css")) return "🌐";
+        return "📄";
+    }
+    
+    /**
+     * Lấy tên loại file từ extension
+     */
+    private String getFileTypeName(String fileName) {
+        String lower = fileName.toLowerCase();
+        if (lower.endsWith(".pdf")) return "PDF Document";
+        if (lower.endsWith(".doc") || lower.endsWith(".docx")) return "Word Document";
+        if (lower.endsWith(".xls") || lower.endsWith(".xlsx")) return "Excel Spreadsheet";
+        if (lower.endsWith(".ppt") || lower.endsWith(".pptx")) return "PowerPoint Presentation";
+        if (lower.endsWith(".txt")) return "Text File";
+        if (lower.endsWith(".md")) return "Markdown File";
+        if (lower.endsWith(".zip")) return "ZIP Archive";
+        if (lower.endsWith(".rar")) return "RAR Archive";
+        if (lower.endsWith(".7z")) return "7-Zip Archive";
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "JPEG Image";
+        if (lower.endsWith(".png")) return "PNG Image";
+        if (lower.endsWith(".gif")) return "GIF Image";
+        if (lower.endsWith(".mp3")) return "MP3 Audio";
+        if (lower.endsWith(".mp4")) return "MP4 Video";
+        if (lower.endsWith(".java")) return "Java Source Code";
+        if (lower.endsWith(".py")) return "Python Script";
+        if (lower.endsWith(".js")) return "JavaScript File";
+        if (lower.endsWith(".html")) return "HTML File";
+        if (lower.endsWith(".css")) return "CSS Stylesheet";
+        
+        // Lấy extension
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex > 0 && dotIndex < fileName.length() - 1) {
+            return fileName.substring(dotIndex + 1).toUpperCase() + " File";
+        }
+        return "Unknown File";
     }
     
     /**
