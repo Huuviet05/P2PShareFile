@@ -44,6 +44,11 @@ public class RelayClient {
     
     private final RelayConfig config;
     
+    // Trạng thái pause/resume cho download
+    private volatile boolean paused = false;
+    private volatile boolean cancelled = false;
+    private String currentDownloadId = null;
+    
     /**
      * Interface callback cho transfer progress
      */
@@ -51,6 +56,15 @@ public class RelayClient {
         void onProgress(RelayTransferProgress progress);
         void onComplete(RelayFileInfo fileInfo);
         void onError(Exception e);
+        
+        /** Called when download is paused */
+        default void onPaused(RelayTransferProgress progress) {}
+        
+        /** Called when download is resumed */
+        default void onResumed(RelayTransferProgress progress) {}
+        
+        /** Called when download is cancelled */
+        default void onCancelled(String fileName) {}
     }
     
     /**
@@ -60,6 +74,66 @@ public class RelayClient {
     public RelayClient(RelayConfig config) {
         this.config = config;
         System.out.println("✓ RelayClient đã khởi tạo: " + config.getServerUrl());
+    }
+    
+    // ========== PAUSE/RESUME/CANCEL CONTROLS ==========
+    
+    /**
+     * Tạm dừng download hiện tại
+     */
+    public void pauseDownload() {
+        if (currentDownloadId != null) {
+            paused = true;
+            System.out.println("⏸ Download paused: " + currentDownloadId);
+        }
+    }
+    
+    /**
+     * Tiếp tục download đã tạm dừng
+     */
+    public void resumeDownload() {
+        if (currentDownloadId != null && paused) {
+            paused = false;
+            synchronized (this) {
+                notifyAll(); // Wake up waiting thread
+            }
+            System.out.println("▶ Download resumed: " + currentDownloadId);
+        }
+    }
+    
+    /**
+     * Hủy download hiện tại
+     */
+    public void cancelDownload() {
+        if (currentDownloadId != null) {
+            cancelled = true;
+            paused = false; // Đảm bảo thread không bị block
+            synchronized (this) {
+                notifyAll();
+            }
+            System.out.println("❌ Download cancelled: " + currentDownloadId);
+        }
+    }
+    
+    /**
+     * Kiểm tra có đang tạm dừng không
+     */
+    public boolean isPaused() {
+        return paused;
+    }
+    
+    /**
+     * Kiểm tra có download đang chạy không
+     */
+    public boolean isDownloading() {
+        return currentDownloadId != null && !paused && !cancelled;
+    }
+    
+    /**
+     * Lấy ID của download hiện tại
+     */
+    public String getCurrentDownloadId() {
+        return currentDownloadId;
     }
     
     /**
@@ -255,6 +329,11 @@ public class RelayClient {
      * @return true nếu thành công, false nếu thất bại
      */
     public boolean downloadFile(RelayFileInfo fileInfo, File destinationFile, RelayTransferListener listener) {
+        // Reset trạng thái
+        paused = false;
+        cancelled = false;
+        currentDownloadId = fileInfo.getUploadId();
+        
         try {
             System.out.println("🔽 Bắt đầu download file: " + fileInfo.getFileName());
             
@@ -269,7 +348,26 @@ public class RelayClient {
             
             // Download file
             File tempFile = new File(destinationFile.getParent(), destinationFile.getName() + ".tmp");
-            downloadWithResume(fileInfo.getDownloadUrl(), tempFile, progress, listener);
+            boolean success = downloadWithResume(fileInfo.getDownloadUrl(), tempFile, progress, listener, fileInfo.getFileName());
+            
+            // Kiểm tra kết quả
+            if (cancelled) {
+                System.out.println("❌ Download bị hủy: " + fileInfo.getFileName());
+                if (listener != null) listener.onCancelled(fileInfo.getFileName());
+                currentDownloadId = null;
+                return false;
+            }
+            
+            if (paused) {
+                // File tạm vẫn giữ lại để resume sau
+                System.out.println("⏸ Download tạm dừng, có thể tiếp tục sau: " + tempFile.getAbsolutePath());
+                return false;
+            }
+            
+            if (!success) {
+                currentDownloadId = null;
+                return false;
+            }
             
             // Skip hash verify - file trên relay có thể khác hash do chunked upload
             System.out.println("✓ Download xong, bỏ qua hash verify cho relay files");
@@ -286,21 +384,25 @@ public class RelayClient {
             }
             
             System.out.println("✅ Download thành công: " + destinationFile.getAbsolutePath());
+            currentDownloadId = null;
             return true;
             
         } catch (Exception e) {
             System.out.println("❌ Lỗi khi download file: " + e.getMessage());
             e.printStackTrace();
             if (listener != null) listener.onError(e);
+            currentDownloadId = null;
             return false;
         }
     }
     
     /**
-     * Download file với resume support
+     * Download file với resume support và pause/cancel control
+     * @return true nếu hoàn thành, false nếu bị dừng hoặc lỗi
      */
-    private void downloadWithResume(String downloadUrl, File destinationFile,
-                                   RelayTransferProgress progress, RelayTransferListener listener) 
+    private boolean downloadWithResume(String downloadUrl, File destinationFile,
+                                   RelayTransferProgress progress, RelayTransferListener listener,
+                                   String fileName) 
             throws IOException {
         
         long startPosition = destinationFile.exists() ? destinationFile.length() : 0;
@@ -328,7 +430,7 @@ public class RelayClient {
                 throw new IOException("Server returned error " + responseCode);
             }
             
-            // Download
+            // Download với pause/cancel support
             try (InputStream is = conn.getInputStream();
                  FileOutputStream fos = new FileOutputStream(destinationFile, startPosition > 0)) {
                 
@@ -337,15 +439,49 @@ public class RelayClient {
                 long totalBytesRead = startPosition;
                 
                 while ((bytesRead = is.read(buffer)) != -1) {
+                    // Kiểm tra cancel
+                    if (cancelled) {
+                        System.out.println("❌ Download cancelled: " + fileName);
+                        return false;
+                    }
+                    
+                    // Kiểm tra pause
+                    while (paused && !cancelled) {
+                        progress.setStatus(RelayTransferProgress.TransferStatus.PAUSED);
+                        if (listener != null) {
+                            listener.onPaused(progress);
+                        }
+                        System.out.println("⏸ Download paused at byte " + totalBytesRead);
+                        
+                        // Đợi cho đến khi resume hoặc cancel
+                        synchronized (this) {
+                            try {
+                                wait(1000); // Check mỗi giây
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                return false;
+                            }
+                        }
+                    }
+                    
+                    // Kiểm tra lại sau khi resume
+                    if (cancelled) {
+                        return false;
+                    }
+                    
+                    // Ghi dữ liệu
                     fos.write(buffer, 0, bytesRead);
                     totalBytesRead += bytesRead;
                     
+                    progress.setStatus(RelayTransferProgress.TransferStatus.IN_PROGRESS);
                     progress.updateProgress(totalBytesRead);
                     if (listener != null) {
                         listener.onProgress(progress);
                     }
                 }
             }
+            
+            return !cancelled && !paused;
             
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);

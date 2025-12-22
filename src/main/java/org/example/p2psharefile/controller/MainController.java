@@ -79,6 +79,18 @@ public class MainController implements P2PService.P2PServiceListener {
     @FXML private ProgressIndicator searchProgressIndicator;
     @FXML private Label searchResultCountLabel;
     
+    // Download Pause/Resume Controls
+    @FXML private Button pauseDownloadButton;
+    @FXML private Button resumeDownloadButton;
+    @FXML private Button cancelDownloadButton;
+    @FXML private VBox downloadProgressBox;
+    @FXML private ProgressBar downloadProgressBar;
+    @FXML private Label downloadFileNameLabel;
+    @FXML private Label downloadSpeedLabel;
+    @FXML private Label downloadPercentLabel;
+    @FXML private Label downloadSizeLabel;
+    @FXML private Label downloadTimeLabel;
+    
     // Other
     @FXML private TextArea logTextArea;
     @FXML private Label logLabel;
@@ -104,6 +116,11 @@ public class MainController implements P2PService.P2PServiceListener {
     // PIN-related
     private ShareSession currentPINSession = null;
     private Timeline pinExpiryTimeline = null;
+    
+    // Download tracking
+    private volatile boolean isDownloading = false;
+    private RelayFileInfo currentDownloadFileInfo = null;
+    private File currentDownloadDestination = null;
     
     /**
      * Class để hiển thị kết quả tìm kiếm
@@ -498,12 +515,185 @@ public class MainController implements P2PService.P2PServiceListener {
         
         if (saveDir != null) {
             downloadDirectory = saveDir.getAbsolutePath();
+            
+            // Hiển thị download progress UI
+            showDownloadProgress(selected.getFileInfo().getFileName());
+            
             p2pService.downloadFile(
                 selected.getPeerInfo(),
                 selected.getFileInfo(),
                 downloadDirectory
             );
             log("📥 Đang download: " + selected.getFileInfo().getFileName());
+        }
+    }
+    
+    /**
+     * Hiển thị download progress UI
+     */
+    private void showDownloadProgress(String fileName) {
+        Platform.runLater(() -> {
+            if (downloadProgressBox != null) {
+                downloadProgressBox.setVisible(true);
+                downloadProgressBox.setManaged(true);
+                isDownloading = true;
+                
+                if (downloadFileNameLabel != null) {
+                    downloadFileNameLabel.setText(fileName);
+                }
+                if (downloadProgressBar != null) {
+                    downloadProgressBar.setProgress(0);
+                }
+                if (downloadPercentLabel != null) {
+                    downloadPercentLabel.setText("0%");
+                }
+                if (downloadSizeLabel != null) {
+                    downloadSizeLabel.setText("");
+                }
+                if (downloadSpeedLabel != null) {
+                    downloadSpeedLabel.setText("");
+                }
+                if (downloadTimeLabel != null) {
+                    downloadTimeLabel.setText("");
+                }
+                
+                // Hiển thị nút pause và cancel
+                if (pauseDownloadButton != null) {
+                    pauseDownloadButton.setVisible(true);
+                    pauseDownloadButton.setManaged(true);
+                }
+                if (cancelDownloadButton != null) {
+                    cancelDownloadButton.setVisible(true);
+                    cancelDownloadButton.setManaged(true);
+                }
+                if (resumeDownloadButton != null) {
+                    resumeDownloadButton.setVisible(false);
+                    resumeDownloadButton.setManaged(false);
+                }
+                
+                // Ẩn nút download
+                if (downloadButton != null) {
+                    downloadButton.setDisable(true);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Ẩn download progress UI
+     */
+    private void hideDownloadProgress() {
+        Platform.runLater(() -> {
+            if (downloadProgressBox != null) {
+                downloadProgressBox.setVisible(false);
+                downloadProgressBox.setManaged(false);
+            }
+            isDownloading = false;
+            
+            // Ẩn các nút điều khiển
+            if (pauseDownloadButton != null) {
+                pauseDownloadButton.setVisible(false);
+                pauseDownloadButton.setManaged(false);
+            }
+            if (resumeDownloadButton != null) {
+                resumeDownloadButton.setVisible(false);
+                resumeDownloadButton.setManaged(false);
+            }
+            if (cancelDownloadButton != null) {
+                cancelDownloadButton.setVisible(false);
+                cancelDownloadButton.setManaged(false);
+            }
+            
+            // Enable lại nút download
+            if (downloadButton != null) {
+                downloadButton.setDisable(false);
+            }
+        });
+    }
+    
+    /**
+     * Cập nhật download progress UI
+     */
+    private void updateDownloadProgress(long bytesTransferred, long totalBytes, double speed, long etaSeconds) {
+        Platform.runLater(() -> {
+            if (downloadProgressBar != null) {
+                double progress = totalBytes > 0 ? (double) bytesTransferred / totalBytes : 0;
+                downloadProgressBar.setProgress(progress);
+            }
+            if (downloadPercentLabel != null) {
+                int percent = totalBytes > 0 ? (int) (bytesTransferred * 100 / totalBytes) : 0;
+                downloadPercentLabel.setText(percent + "%");
+            }
+            if (downloadSizeLabel != null) {
+                downloadSizeLabel.setText(formatBytes(bytesTransferred) + " / " + formatBytes(totalBytes));
+            }
+            if (downloadSpeedLabel != null && speed > 0) {
+                downloadSpeedLabel.setText(formatBytes((long) speed) + "/s");
+            }
+            if (downloadTimeLabel != null && etaSeconds > 0) {
+                long mins = etaSeconds / 60;
+                long secs = etaSeconds % 60;
+                downloadTimeLabel.setText(String.format("Còn %d:%02d", mins, secs));
+            }
+        });
+    }
+    
+    /**
+     * Xử lý khi nhấn nút Tạm dừng download
+     */
+    @FXML
+    private void handlePauseDownload() {
+        RelayClient relayClient = p2pService.getRelayClient();
+        if (relayClient != null && isDownloading) {
+            relayClient.pauseDownload();
+            log("⏸ Đã tạm dừng download");
+            
+            Platform.runLater(() -> {
+                if (pauseDownloadButton != null) {
+                    pauseDownloadButton.setVisible(false);
+                    pauseDownloadButton.setManaged(false);
+                }
+                if (resumeDownloadButton != null) {
+                    resumeDownloadButton.setVisible(true);
+                    resumeDownloadButton.setManaged(true);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Xử lý khi nhấn nút Tiếp tục download
+     */
+    @FXML
+    private void handleResumeDownload() {
+        RelayClient relayClient = p2pService.getRelayClient();
+        if (relayClient != null && relayClient.isPaused()) {
+            relayClient.resumeDownload();
+            log("▶ Tiếp tục download");
+            
+            Platform.runLater(() -> {
+                if (resumeDownloadButton != null) {
+                    resumeDownloadButton.setVisible(false);
+                    resumeDownloadButton.setManaged(false);
+                }
+                if (pauseDownloadButton != null) {
+                    pauseDownloadButton.setVisible(true);
+                    pauseDownloadButton.setManaged(true);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Xử lý khi nhấn nút Hủy download
+     */
+    @FXML
+    private void handleCancelDownload() {
+        RelayClient relayClient = p2pService.getRelayClient();
+        if (relayClient != null && isDownloading) {
+            relayClient.cancelDownload();
+            log("✕ Đã hủy download");
+            hideDownloadProgress();
         }
     }
     
@@ -1296,7 +1486,7 @@ public class MainController implements P2PService.P2PServiceListener {
             
             try {
                 p2pService.receiveByPIN(pin, downloadDirectory);
-                log("📥 Đang tải file bằng mã PIN: " + pin);
+                log("� Đang tải file bằng mã PIN: " + pin);
                 pinInputField.clear();
                 showInfo("Đã bắt đầu tải file từ mã PIN: " + pin);
             } catch (IllegalArgumentException e) {
@@ -1491,6 +1681,15 @@ public class MainController implements P2PService.P2PServiceListener {
     
     @Override
     public void onTransferProgress(String fileName, long bytesTransferred, long totalBytes) {
+        // Tính toán tốc độ và thời gian còn lại (ước tính đơn giản)
+        double speed = bytesTransferred > 0 ? bytesTransferred / 1.0 : 0; // bytes/s ước tính
+        long etaSeconds = totalBytes > 0 && speed > 0 ? (long)((totalBytes - bytesTransferred) / speed) : 0;
+        
+        // Cập nhật progress UI
+        if (isDownloading) {
+            updateDownloadProgress(bytesTransferred, totalBytes, speed, etaSeconds);
+        }
+        
         Platform.runLater(() -> {
             int percent = (int) ((bytesTransferred * 100) / totalBytes);
             log("⏳ " + fileName + ": " + percent + "%");
@@ -1500,6 +1699,9 @@ public class MainController implements P2PService.P2PServiceListener {
     @Override
     public void onTransferComplete(String fileName, File file) {
         Platform.runLater(() -> {
+            // Ẩn progress UI
+            hideDownloadProgress();
+            
             log("✅ Download hoàn tất: " + fileName);
             if (isP2PMode) {
                 log("  🔓 Đã giải mã AES-256 và giải nén");
@@ -1516,6 +1718,9 @@ public class MainController implements P2PService.P2PServiceListener {
     @Override
     public void onTransferError(String fileName, Exception e) {
         Platform.runLater(() -> {
+            // Ẩn progress UI
+            hideDownloadProgress();
+            
             log("❌ Lỗi download " + fileName + ": " + e.getMessage());
             showError("Lỗi khi download: " + e.getMessage());
         });

@@ -316,7 +316,31 @@
                                         styleClass="btn-ghost"/>
                                 <Button fx:id="downloadButton" text="⬇ Tải về" onAction="#handleDownload"
                                         styleClass="btn-primary"/>
+                                <Button fx:id="pauseDownloadButton" text="⏸ Tạm dừng" onAction="#handlePauseDownload"
+                                        styleClass="btn-warning" visible="false" managed="false"/>
+                                <Button fx:id="resumeDownloadButton" text="▶ Tiếp tục" onAction="#handleResumeDownload"
+                                        styleClass="btn-success" visible="false" managed="false"/>
+                                <Button fx:id="cancelDownloadButton" text="✕ Hủy" onAction="#handleCancelDownload"
+                                        styleClass="btn-danger" visible="false" managed="false"/>
                             </HBox>
+                            
+                            <!-- Download progress bar -->
+                            <VBox fx:id="downloadProgressBox" spacing="5" visible="false" managed="false" 
+                                  styleClass="download-progress-container">
+                                <HBox spacing="10" alignment="CENTER_LEFT">
+                                    <Label fx:id="downloadFileNameLabel" text="" styleClass="download-filename"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="downloadSpeedLabel" text="" styleClass="download-speed"/>
+                                </HBox>
+                                <ProgressBar fx:id="downloadProgressBar" progress="0" maxWidth="Infinity" 
+                                            styleClass="download-progress"/>
+                                <HBox spacing="10" alignment="CENTER">
+                                    <Label fx:id="downloadPercentLabel" text="0%" styleClass="download-percent"/>
+                                    <Label fx:id="downloadSizeLabel" text="" styleClass="download-size"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label fx:id="downloadTimeLabel" text="" styleClass="download-time"/>
+                                </HBox>
+                            </VBox>
                         </VBox>
                         
                         <!-- Status bar -->

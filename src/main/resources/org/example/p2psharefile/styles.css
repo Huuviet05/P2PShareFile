@@ -1588,3 +1588,76 @@
 	-fx-border-color: #bfdbfe;
 	-fx-border-width: 0 0 0 3;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   DOWNLOAD PROGRESS UI
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.btn-warning {
+	-fx-background-color: #f59e0b;
+	-fx-text-fill: white;
+	-fx-font-weight: 600;
+	-fx-font-size: 13;
+	-fx-padding: 10 20;
+	-fx-background-radius: 8;
+	-fx-cursor: hand;
+}
+
+.btn-warning:hover {
+	-fx-background-color: #d97706;
+}
+
+.download-progress-container {
+	-fx-background-color: white;
+	-fx-background-radius: 12;
+	-fx-padding: 16;
+	-fx-border-color: #e5e7eb;
+	-fx-border-radius: 12;
+	-fx-border-width: 1;
+	-fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 8, 0, 0, 2);
+}
+
+.download-filename {
+	-fx-font-size: 14;
+	-fx-font-weight: bold;
+	-fx-text-fill: #1f2937;
+}
+
+.download-speed {
+	-fx-font-size: 12;
+	-fx-text-fill: #3b82f6;
+	-fx-font-weight: 600;
+}
+
+.download-progress {
+	-fx-pref-height: 8;
+	-fx-background-color: #e5e7eb;
+	-fx-background-radius: 4;
+}
+
+.download-progress .track {
+	-fx-background-color: #e5e7eb;
+	-fx-background-radius: 4;
+}
+
+.download-progress .bar {
+	-fx-background-color: linear-gradient(to right, #3b82f6, #2563eb);
+	-fx-background-radius: 4;
+	-fx-background-insets: 0;
+}
+
+.download-percent {
+	-fx-font-size: 14;
+	-fx-font-weight: bold;
+	-fx-text-fill: #3b82f6;
+}
+
+.download-size {
+	-fx-font-size: 12;
+	-fx-text-fill: #6b7280;
+}
+
+.download-time {
+	-fx-font-size: 12;
+	-fx-text-fill: #9ca3af;
+}
