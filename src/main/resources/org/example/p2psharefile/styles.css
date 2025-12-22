@@ -27,6 +27,20 @@
 	-fx-padding: 12 24;
 }
 
+/* Footer bar: small panel matching header color */
+.footer-bar {
+	-fx-background-color: #1f2937;
+	-fx-padding: 6 24;
+	-fx-alignment: CENTER_LEFT;
+	-fx-min-height: 28;
+	-fx-pref-height: 28;
+}
+
+.footer-text {
+	-fx-font-size: 12;
+	-fx-text-fill: #9ca3af;
+}
+
 .logo-container {
 	-fx-background-color: #3b82f6;
 	-fx-background-radius: 10;

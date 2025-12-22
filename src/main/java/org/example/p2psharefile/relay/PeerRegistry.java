@@ -5,6 +5,7 @@ import org.example.p2psharefile.model.PeerInfo;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 /**
  * PeerRegistry - Quản lý danh sách peers đăng ký với relay server
@@ -70,6 +71,8 @@ public class PeerRegistry {
         }
     }
     
+    private static final Logger LOGGER = Logger.getLogger(PeerRegistry.class.getName());
+
     /**
      * Đăng ký hoặc cập nhật peer
      */
@@ -81,7 +84,7 @@ public class PeerRegistry {
             // Peer mới
             peer = new RegisteredPeer(peerId, displayName, publicIp, port, publicKey);
             peers.put(peerId, peer);
-            System.out.println("📝 Peer đăng ký: " + displayName + " (" + publicIp + ":" + port + ")");
+            LOGGER.info("📝 Peer registered: " + displayName + " (" + publicIp + ":" + port + ")");
         } else {
             // Cập nhật heartbeat
             peer.updateHeartbeat();
@@ -104,7 +107,7 @@ public class PeerRegistry {
     public synchronized void unregisterPeer(String peerId) {
         RegisteredPeer peer = peers.remove(peerId);
         if (peer != null) {
-            System.out.println("👋 Peer hủy đăng ký: " + peer.getDisplayName());
+            LOGGER.info("👋 Peer unregistered: " + peer.getDisplayName());
         }
     }
     
@@ -148,11 +151,13 @@ public class PeerRegistry {
         
         for (String peerId : expiredIds) {
             RegisteredPeer peer = peers.remove(peerId);
-            System.out.println("🕒 Peer timeout: " + peer.getDisplayName());
+            if (peer != null) {
+                LOGGER.info("🕒 Peer timeout: " + peer.getDisplayName());
+            }
         }
         
         if (!expiredIds.isEmpty()) {
-            System.out.println("🧹 Đã xóa " + expiredIds.size() + " peer(s) hết hạn");
+            LOGGER.info("🧹 Removed " + expiredIds.size() + " expired peer(s)");
         }
     }
     

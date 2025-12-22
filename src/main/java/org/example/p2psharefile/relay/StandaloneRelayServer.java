@@ -49,9 +49,9 @@ public class StandaloneRelayServer {
     
     public static void main(String[] args) {
         try {
-            System.out.println("\n╔══════════════════════════════════════════════════╗");
-            System.out.println("║   🌐 STANDALONE RELAY SERVER FOR P2P FILE SHARE  ║");
-            System.out.println("╚══════════════════════════════════════════════════╝\n");
+            LOGGER.info("\n╔══════════════════════════════════════════════════╗");
+            LOGGER.info("║   🌐 STANDALONE RELAY SERVER FOR P2P FILE SHARE  ║");
+            LOGGER.info("╚══════════════════════════════════════════════════╝\n");
             
             // Đọc config từ environment variables
             int port = getEnvInt("PORT", DEFAULT_PORT);
@@ -64,40 +64,40 @@ public class StandaloneRelayServer {
             long expiryMs = expiryHours * 60 * 60 * 1000; // Convert hours to ms
             
             // In config
-            System.out.println("📋 Configuration:");
-            System.out.println("   • Port: " + port);
-            System.out.println("   • Storage Directory: " + storageDir.toAbsolutePath());
-            System.out.println("   • File Expiry: " + expiryHours + " hours");
-            System.out.println("   • Max File Size: " + maxFileSizeMB + " MB");
-            System.out.println("   • CORS: " + (enableCors ? "Enabled" : "Disabled"));
-            System.out.println();
+            LOGGER.info("📋 Configuration:");
+            LOGGER.info("   • Port: " + port);
+            LOGGER.info("   • Storage Directory: " + storageDir.toAbsolutePath());
+            LOGGER.info("   • File Expiry: " + expiryHours + " hours");
+            LOGGER.info("   • Max File Size: " + maxFileSizeMB + " MB");
+            LOGGER.info("   • CORS: " + (enableCors ? "Enabled" : "Disabled"));
+            LOGGER.info("");
             
             // Tạo và khởi động server
             RelayServer server = new RelayServer(port, storageDir, expiryMs);
             server.start();
             
-            System.out.println("✅ Relay Server đang chạy!");
-            System.out.println("📡 Endpoints:");
-            System.out.println("   • Upload: POST http://localhost:" + port + "/api/relay/upload");
-            System.out.println("   • Download: GET http://localhost:" + port + "/api/relay/download/:uploadId");
-            System.out.println("   • Status: GET http://localhost:" + port + "/api/relay/status/:uploadId");
-            System.out.println("   • Health: GET http://localhost:" + port + "/api/relay/status/health");
-            System.out.println("   • Peer Register: POST http://localhost:" + port + "/api/peers/register");
-            System.out.println("   • Peer List: GET http://localhost:" + port + "/api/peers/list");
-            System.out.println("   • Peer Heartbeat: POST http://localhost:" + port + "/api/peers/heartbeat");
-            System.out.println("   • File Register: POST http://localhost:" + port + "/api/files/register");
-            System.out.println("   • File Search: GET http://localhost:" + port + "/api/files/search");
-            System.out.println("   • PIN Create: POST http://localhost:" + port + "/api/pin/create");
-            System.out.println("   • PIN Find: GET http://localhost:" + port + "/api/pin/find");
-            System.out.println();
-            System.out.println("⚡ Server is ready to accept connections!");
-            System.out.println("   Press Ctrl+C to stop the server\n");
+            LOGGER.info("✅ Relay Server đang chạy!");
+            LOGGER.info("📡 Endpoints:");
+            LOGGER.info("   • Upload: POST http://localhost:" + port + "/api/relay/upload");
+            LOGGER.info("   • Download: GET http://localhost:" + port + "/api/relay/download/:uploadId");
+            LOGGER.info("   • Status: GET http://localhost:" + port + "/api/relay/status/:uploadId");
+            LOGGER.info("   • Health: GET http://localhost:" + port + "/api/relay/status/health");
+            LOGGER.info("   • Peer Register: POST http://localhost:" + port + "/api/peers/register");
+            LOGGER.info("   • Peer List: GET http://localhost:" + port + "/api/peers/list");
+            LOGGER.info("   • Peer Heartbeat: POST http://localhost:" + port + "/api/peers/heartbeat");
+            LOGGER.info("   • File Register: POST http://localhost:" + port + "/api/files/register");
+            LOGGER.info("   • File Search: GET http://localhost:" + port + "/api/files/search");
+            LOGGER.info("   • PIN Create: POST http://localhost:" + port + "/api/pin/create");
+            LOGGER.info("   • PIN Find: GET http://localhost:" + port + "/api/pin/find");
+            LOGGER.info("");
+            LOGGER.info("⚡ Server is ready to accept connections!");
+            LOGGER.info("   Press Ctrl+C to stop the server\n");
             
             // Keep server running
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println("\n🛑 Shutting down relay server...");
+                LOGGER.info("\n🛑 Shutting down relay server...");
                 server.stop();
-                System.out.println("✅ Server stopped successfully");
+                LOGGER.info("✅ Server stopped successfully");
             }));
             
             // Chạy mãi mãi cho đến khi bị dừng

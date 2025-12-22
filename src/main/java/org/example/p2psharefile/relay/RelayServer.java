@@ -888,16 +888,16 @@ public class RelayServer {
             RelayServer server = new RelayServer(port, storageDir, expiryMs);
             server.start();
             
-            System.out.println("\n" + "=".repeat(60));
-            System.out.println("  RELAY SERVER - P2PShareFile");
-            System.out.println("=".repeat(60));
-            System.out.println("✅ Server đang chạy tại: http://localhost:" + port);
-            System.out.println("📁 Thư mục lưu trữ: " + storageDir.toAbsolutePath());
-            System.out.println("\nEndpoints:");
-            System.out.println("  • POST   http://localhost:" + port + "/api/relay/upload");
-            System.out.println("  • GET    http://localhost:" + port + "/api/relay/download/:uploadId");
-            System.out.println("  • GET    http://localhost:" + port + "/api/relay/status/:uploadId");
-            System.out.println("\nNhấn Ctrl+C để dừng server...\n");
+            LOGGER.info("\n" + "=".repeat(60));
+            LOGGER.info("  RELAY SERVER - P2PShareFile");
+            LOGGER.info("=".repeat(60));
+            LOGGER.info("✅ Server đang chạy tại: http://localhost:" + port);
+            LOGGER.info("📁 Thư mục lưu trữ: " + storageDir.toAbsolutePath());
+            LOGGER.info("\nEndpoints:");
+            LOGGER.info("  • POST   http://localhost:" + port + "/api/relay/upload");
+            LOGGER.info("  • GET    http://localhost:" + port + "/api/relay/download/:uploadId");
+            LOGGER.info("  • GET    http://localhost:" + port + "/api/relay/status/:uploadId");
+            LOGGER.info("\nNhấn Ctrl+C để dừng server...\n");
             
             // Keep running
             Thread.currentThread().join();

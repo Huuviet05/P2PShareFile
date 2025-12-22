@@ -32,8 +32,8 @@
             <!-- Connection Mode Toggle -->
             <HBox spacing="8" alignment="CENTER" styleClass="mode-toggle-box">
                 <Label text="🔒" styleClass="mode-icon"/>
-                <ToggleButton fx:id="p2pModeToggle" text="P2P" styleClass="mode-toggle-btn" selected="true"/>
-                <ToggleButton fx:id="relayModeToggle" text="Relay" styleClass="mode-toggle-btn"/>
+                <ToggleButton fx:id="p2pModeToggle" text="LAN" styleClass="mode-toggle-btn" selected="true"/>
+                <ToggleButton fx:id="relayModeToggle" text="Internet" styleClass="mode-toggle-btn"/>
             </HBox>
             
             <!-- Status Pills -->
@@ -358,24 +358,13 @@
         </HBox>
     </center>
     
-    <!-- ═══════════════════════════════════════════════════════════════════════ -->
-    <!-- BOTTOM: Log Panel -->
-    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- Small footer bar (same color as header) -->
     <bottom>
-        <VBox styleClass="log-area">
-            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="log-header">
-                <Label text="Activity Log" styleClass="log-title"/>
-                <Region HBox.hgrow="ALWAYS"/>
-                <Label text="Real-time" styleClass="log-realtime"/>
+        <HBox styleClass="footer-bar" alignment="CENTER_LEFT">
+            <HBox spacing="8" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                <Label text="" styleClass="footer-text"/>
             </HBox>
-            <ScrollPane prefHeight="100" fitToWidth="true" styleClass="log-scroll">
-                <VBox styleClass="log-content">
-                    <Label fx:id="logLabel" text="" styleClass="log-text" wrapText="true"/>
-                </VBox>
-            </ScrollPane>
-            <!-- Hidden TextArea for compatibility -->
-            <TextArea fx:id="logTextArea" visible="false" managed="false"/>
-        </VBox>
+        </HBox>
     </bottom>
     
 </BorderPane>

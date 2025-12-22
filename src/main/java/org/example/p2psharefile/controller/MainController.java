@@ -200,8 +200,8 @@ public class MainController implements P2PService.P2PServiceListener {
         // Setup connection mode toggle buttons
         setupConnectionModeToggle();
         
-        // Set default status label to P2P Mode (LAN)
-        statusLabel.setText("P2P Mode (LAN)");
+        // Set default status label to P2P (LAN)
+        statusLabel.setText("P2P (LAN)");
         statusLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold; -fx-font-size: 14;");
         if (statusDot != null) {
             statusDot.setStyle("-fx-text-fill: #10b981; -fx-font-size: 20;");
@@ -392,7 +392,7 @@ public class MainController implements P2PService.P2PServiceListener {
             
             if (isP2PMode) {
                 // P2P mode: Preview enabled, search only LAN
-                statusLabel.setText("P2P Mode (LAN)");
+                statusLabel.setText("P2P (LAN)");
                 statusLabel.setStyle("-fx-text-fill: #10b981; -fx-font-weight: bold; -fx-font-size: 14;");
                 if (statusDot != null) {
                     statusDot.setStyle("-fx-text-fill: #10b981; -fx-font-size: 20;");
@@ -404,7 +404,8 @@ public class MainController implements P2PService.P2PServiceListener {
                 }
             } else {
                 // Relay mode: Preview disabled, search qua relay
-                statusLabel.setText("Relay Mode (Internet)");
+                // Show as P2P over Internet in UI
+                statusLabel.setText("P2P (Internet)");
                 statusLabel.setStyle("-fx-text-fill: #3b82f6; -fx-font-weight: bold; -fx-font-size: 14;");
                 if (statusDot != null) {
                     statusDot.setStyle("-fx-text-fill: #3b82f6; -fx-font-size: 20;");
