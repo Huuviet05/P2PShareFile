@@ -52,9 +52,9 @@ public class RelayConfig implements Serializable {
     private long maxFileSize;              // Kích thước file tối đa (bytes, 0 = không giới hạn)
     private long defaultExpiryTime;        // Thời gian hết hạn mặc định (ms, 0 = không hết hạn)
     
-    // Security
-    private boolean enableEncryption;      // Có mã hóa file client-side không (default: true)
-    private boolean verifyCertificate;     // Verify SSL certificate (default: true)
+    // Security (UNUSED - chỉ để tương thích)
+    private boolean enableEncryption;      // KHÔNG SỬ DỤNG - Relay mode không mã hóa file
+    private boolean verifyCertificate;     // KHÔNG SỬ DỤNG - Chỉ dùng HTTP
     
     // Logging
     private boolean enableLogging;         // Có log không (default: true)
@@ -91,8 +91,7 @@ public class RelayConfig implements Serializable {
         this.maxFileSize = 0; // No limit
         this.defaultExpiryTime = 24 * 60 * 60 * 1000; // 24 hours
         
-        // Security - Tắt encryption vì relay server đã dùng HTTPS
-        // và việc sync encrypted flag giữa upload/download phức tạp
+        // Security - UNUSED: Relay mode KHÔNG mã hóa file (chỉ dựa vào Render HTTPS)
         this.enableEncryption = false;
         this.verifyCertificate = true;
         

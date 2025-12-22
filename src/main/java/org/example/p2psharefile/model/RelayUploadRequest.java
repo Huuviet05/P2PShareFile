@@ -12,9 +12,11 @@ import java.io.Serializable;
  * 
  * Flow:
  * 1. Client tạo RelayUploadRequest với thông tin file
- * 2. Upload file (có thể mã hóa) lên relay server
+ * 2. Upload file lên relay server (chunked, không mã hóa)
  * 3. Server trả về RelayFileInfo với uploadId và downloadUrl
- * 4. Sender gửi RelayFileInfo cho recipient qua signaling
+ * 4. Sender gửi RelayFileInfo cho recipient qua PIN code
+ * 
+ * LƯU Ý: Relay mode KHÔNG mã hóa file, chỉ dựa vào HTTPS của hosting provider.
  * 
  * @author P2PShareFile Team
  * @version 1.0
@@ -28,9 +30,11 @@ public class RelayUploadRequest implements Serializable {
     private String recipientId;        // ID của peer nhận file (optional, có thể null nếu share public)
     private String fileName;           // Tên file gốc
     private long fileSize;             // Kích thước file (bytes)
-    private String fileHash;           // Hash SHA-256 của file (để verify)
-    private boolean encrypted;         // File có được mã hóa client-side không
-    private String encryptionAlgorithm; // Thuật toán mã hóa (VD: "AES-GCM-256")
+    private String fileHash;           // Hash SHA-256 của file (metadata, không verify)
+    
+    // UNUSED: Các trường encryption không sử dụng (giữ lại để tương thích serialize)
+    private boolean encrypted;         // KHÔNG SỬ DỤNG - Relay mode không mã hóa file
+    private String encryptionAlgorithm; // KHÔNG SỬ DỤNG
     private long expiryTime;           // Thời gian hết hạn (unix timestamp), 0 = không hết hạn
     private String description;        // Mô tả file (optional)
     

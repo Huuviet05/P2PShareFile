@@ -11,7 +11,9 @@ import java.io.Serializable;
  * - expiryTime: Thời gian hết hạn
  * 
  * Sender sẽ gửi RelayFileInfo này cho recipient qua signaling channel
- * để recipient có thể download file.
+ * (hoặc PIN code) để recipient có thể download file.
+ * 
+ * LƯU Ý: Relay mode KHÔNG mã hóa file, chỉ dựa vào HTTPS của hosting provider.
  * 
  * @author P2PShareFile Team
  * @version 1.0
@@ -30,9 +32,11 @@ public class RelayFileInfo implements Serializable {
     private String recipientId;        // ID của peer được phép download (null = public)
     private long uploadTime;           // Thời gian upload (unix timestamp)
     private long expiryTime;           // Thời gian hết hạn (unix timestamp), 0 = không hết hạn
-    private boolean encrypted;         // File có được mã hóa không
-    private String encryptionAlgorithm; // Thuật toán mã hóa nếu có
-    private String encryptionKey;      // Khóa mã hóa đã được mã hóa bằng public key của recipient (optional)
+    
+    // UNUSED: Các trường encryption không sử dụng (giữ lại để tương thích serialize)
+    private boolean encrypted;         // KHÔNG SỬ DỤNG - Relay mode không mã hóa file
+    private String encryptionAlgorithm; // KHÔNG SỬ DỤNG
+    private String encryptionKey;      // KHÔNG SỬ DỤNG
     
     // Metadata
     private String mimeType;           // MIME type

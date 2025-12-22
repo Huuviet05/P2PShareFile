@@ -1,10 +1,7 @@
 package org.example.p2psharefile.network;
 
 import org.example.p2psharefile.model.*;
-import org.example.p2psharefile.security.AESEncryption;
-import org.example.p2psharefile.security.FileHashUtil;
 
-import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -13,43 +10,39 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.UUID;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 /**
  * RelayClient - Client để upload/download file qua Relay Server
  * 
  * Chức năng chính:
  * 1. Upload file lên relay server (với chunking, resume, retry)
- * 2. Download file từ relay server (với chunking, resume, verify)
- * 3. Mã hóa file client-side trước khi upload (AES-GCM)
- * 4. Giải mã file sau khi download
- * 5. Tính hash để verify integrity
- * 6. Báo cáo progress cho UI
+ * 2. Download file từ relay server (với resume support)
+ * 3. Báo cáo progress cho UI
+ * 4. Hỗ trợ PIN code cho Quick Share
+ * 5. File search qua relay server
+ * 
+ * LƯU Ý:
+ * - Relay mode KHÔNG mã hóa file (chỉ dựa vào HTTPS của hosting provider)
+ * - Không verify hash (file có thể thay đổi do chunked upload)
+ * - Bảo mật phụ thuộc vào Render.com HTTPS + PIN expiry + file expiry
  * 
  * Flow upload:
  * 1. Tạo RelayUploadRequest với thông tin file
- * 2. (Optional) Mã hóa file nếu config.enableEncryption = true
- * 3. Chia file thành chunks và upload từng chunk
- * 4. Retry nếu upload chunk thất bại
- * 5. Server trả về RelayFileInfo với uploadId và downloadUrl
+ * 2. Chia file thành chunks và upload từng chunk
+ * 3. Retry nếu upload chunk thất bại
+ * 4. Server trả về RelayFileInfo với uploadId và downloadUrl
  * 
  * Flow download:
- * 1. Nhận RelayFileInfo từ sender
+ * 1. Nhận RelayFileInfo từ sender (hoặc tìm qua PIN)
  * 2. Download từng chunk với resume support
- * 3. Verify hash sau khi download xong
- * 4. (Optional) Giải mã file nếu encrypted
- * 5. Lưu file vào đích
+ * 3. Lưu file vào đích
  * 
  * @author P2PShareFile Team
  * @version 1.0
  */
 public class RelayClient {
     
-    private static final Logger LOGGER = Logger.getLogger(RelayClient.class.getName());
-    
     private final RelayConfig config;
-    private final SecretKey encryptionKey;
     
     /**
      * Interface callback cho transfer progress
@@ -66,29 +59,7 @@ public class RelayClient {
      */
     public RelayClient(RelayConfig config) {
         this.config = config;
-        // Tạo encryption key từ peer's private key hoặc shared secret
-        this.encryptionKey = AESEncryption.createKeyFromString("RelayEncryptionKey123456789012"); // TODO: Use proper key
-        
-        if (config.isEnableLogging()) {
-            LOGGER.setLevel(parseLogLevel(config.getLogLevel()));
-            LOGGER.info("✓ RelayClient initialized: " + config);
-        }
-    }
-    
-    /**
-     * Parse log level string sang java.util.logging.Level
-     * Map các level phổ biến: DEBUG -> FINE, WARN -> WARNING
-     */
-    private Level parseLogLevel(String levelStr) {
-        if (levelStr == null) return Level.INFO;
-        
-        return switch (levelStr.toUpperCase()) {
-            case "DEBUG" -> Level.FINE;
-            case "TRACE" -> Level.FINEST;
-            case "WARN" -> Level.WARNING;
-            case "ERROR" -> Level.SEVERE;
-            default -> Level.parse(levelStr.toUpperCase());
-        };
+        System.out.println("✓ RelayClient đã khởi tạo: " + config.getServerUrl());
     }
     
     /**
@@ -107,7 +78,7 @@ public class RelayClient {
         }
         
         try {
-            LOGGER.info("🚀 Bắt đầu upload file: " + sourceFile.getName() + " (" + sourceFile.length() + " bytes)");
+            System.out.println("🚀 Upload file: " + sourceFile.getName() + " (" + formatBytes(sourceFile.length()) + ")");
             
             // Tạo transfer ID và progress tracker
             String transferId = UUID.randomUUID().toString();
@@ -118,28 +89,13 @@ public class RelayClient {
                 sourceFile.length()
             );
             
-            // Tính hash của file
-            String fileHash = FileHashUtil.calculateSHA256(sourceFile);
-            request.setFileHash(fileHash);
-            LOGGER.info("📝 File hash (SHA-256): " + fileHash);
-            
-            // Mã hóa file nếu cần
-            File fileToUpload = sourceFile;
-            if (config.isEnableEncryption()) {
-                LOGGER.info("🔐 Mã hóa file trước khi upload...");
-                fileToUpload = encryptFile(sourceFile);
-                request.setEncrypted(true);
-                request.setEncryptionAlgorithm("AES-GCM-256");
-            }
-            
             // Tính số chunks
-            int totalChunks = (int) Math.ceil((double) fileToUpload.length() / config.getChunkSize());
+            int totalChunks = (int) Math.ceil((double) sourceFile.length() / config.getChunkSize());
             progress.setTotalChunks(totalChunks);
-            LOGGER.info("📦 Chia file thành " + totalChunks + " chunks (chunk size: " + 
-                       formatBytes(config.getChunkSize()) + ")");
+            System.out.println("📦 Chia thành " + totalChunks + " chunks");
             
             // Upload từng chunk với retry
-            String uploadId = uploadChunks(fileToUpload, request, progress, listener);
+            String uploadId = uploadChunks(sourceFile, request, progress, listener);
             
             if (uploadId == null) {
                 throw new IOException("Upload thất bại");
@@ -150,21 +106,14 @@ public class RelayClient {
                 uploadId,
                 sourceFile.getName(),
                 sourceFile.length(),
-                fileHash,
+                null,  // Không dùng hash trong relay mode
                 config.getServerUrl() + config.getDownloadEndpoint() + "/" + uploadId
             );
             fileInfo.setSenderId(request.getSenderId());
             fileInfo.setSenderName(request.getSenderName());
             fileInfo.setRecipientId(request.getRecipientId());
-            fileInfo.setEncrypted(request.isEncrypted());
-            fileInfo.setEncryptionAlgorithm(request.getEncryptionAlgorithm());
             fileInfo.setMimeType(request.getMimeType());
             fileInfo.setExpiryTime(System.currentTimeMillis() + config.getDefaultExpiryTime());
-            
-            // Xóa file tạm nếu đã mã hóa
-            if (config.isEnableEncryption() && fileToUpload != sourceFile) {
-                fileToUpload.delete();
-            }
             
             // Báo hoàn thành
             progress.setStatus(RelayTransferProgress.TransferStatus.COMPLETED);
@@ -173,11 +122,11 @@ public class RelayClient {
                 listener.onComplete(fileInfo);
             }
             
-            LOGGER.info("✅ Upload thành công! Upload ID: " + uploadId);
+            System.out.println("✅ Upload thành công! ID: " + uploadId);
             return fileInfo;
             
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "❌ Lỗi khi upload file: " + e.getMessage(), e);
+            System.err.println("❌ Lỗi upload: " + e.getMessage());
             if (listener != null) listener.onError(e);
             return null;
         }
@@ -220,12 +169,9 @@ public class RelayClient {
                             listener.onProgress(progress);
                         }
                         
-                        LOGGER.fine(String.format("✓ Chunk %d/%d uploaded (%.1f%%)", 
-                                   chunkIndex + 1, progress.getTotalChunks(), progress.getPercentage()));
-                        
                     } catch (IOException e) {
                         attempt++;
-                        LOGGER.warning(String.format("⚠ Chunk %d upload failed (attempt %d/%d): %s", 
+                        System.out.println(String.format("⚠ Chunk %d upload failed (attempt %d/%d): %s", 
                                      chunkIndex, attempt, config.getMaxRetries(), e.getMessage()));
                         
                         if (attempt < config.getMaxRetries()) {
@@ -289,8 +235,6 @@ public class RelayClient {
                 throw new IOException("Server returned error " + responseCode + ": " + errorMsg);
             }
             
-            LOGGER.finest("Chunk " + chunkIndex + " uploaded successfully");
-            
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         } finally {
@@ -312,7 +256,7 @@ public class RelayClient {
      */
     public boolean downloadFile(RelayFileInfo fileInfo, File destinationFile, RelayTransferListener listener) {
         try {
-            LOGGER.info("🔽 Bắt đầu download file: " + fileInfo.getFileName());
+            System.out.println("🔽 Bắt đầu download file: " + fileInfo.getFileName());
             
             // Tạo progress tracker
             String transferId = UUID.randomUUID().toString();
@@ -328,16 +272,7 @@ public class RelayClient {
             downloadWithResume(fileInfo.getDownloadUrl(), tempFile, progress, listener);
             
             // Skip hash verify - file trên relay có thể khác hash do chunked upload
-            // Hash sẽ được verify ở layer trên nếu cần
-            LOGGER.info("✓ Download xong, bỏ qua hash verify cho relay files");
-            
-            // Giải mã nếu cần
-            if (fileInfo.isEncrypted()) {
-                LOGGER.info("🔓 Giải mã file...");
-                File decryptedFile = decryptFile(tempFile);
-                tempFile.delete();
-                tempFile = decryptedFile;
-            }
+            System.out.println("✓ Download xong, bỏ qua hash verify cho relay files");
             
             // Di chuyển file tạm sang đích
             Files.move(tempFile.toPath(), destinationFile.toPath(), 
@@ -350,11 +285,12 @@ public class RelayClient {
                 listener.onComplete(fileInfo);
             }
             
-            LOGGER.info("✅ Download thành công: " + destinationFile.getAbsolutePath());
+            System.out.println("✅ Download thành công: " + destinationFile.getAbsolutePath());
             return true;
             
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "❌ Lỗi khi download file: " + e.getMessage(), e);
+            System.out.println("❌ Lỗi khi download file: " + e.getMessage());
+            e.printStackTrace();
             if (listener != null) listener.onError(e);
             return false;
         }
@@ -380,7 +316,7 @@ public class RelayClient {
             // Resume support
             if (startPosition > 0 && config.isEnableResume()) {
                 conn.setRequestProperty("Range", "bytes=" + startPosition + "-");
-                LOGGER.info("📍 Resume download from byte " + startPosition);
+                System.out.println("📍 Resume download from byte " + startPosition);
             }
             
             if (config.getApiKey() != null) {
@@ -420,36 +356,7 @@ public class RelayClient {
         }
     }
     
-    /**
-     * Mã hóa file trước khi upload
-     */
-    private File encryptFile(File sourceFile) throws Exception {
-        File encryptedFile = new File(sourceFile.getParent(), sourceFile.getName() + ".encrypted");
-        
-        // Đọc file và mã hóa
-        byte[] fileData = Files.readAllBytes(sourceFile.toPath());
-        byte[] encryptedData = AESEncryption.encrypt(fileData, encryptionKey);
-        
-        // Ghi file đã mã hóa
-        Files.write(encryptedFile.toPath(), encryptedData);
-        return encryptedFile;
-    }
-    
-    /**
-     * Giải mã file sau khi download
-     */
-    private File decryptFile(File encryptedFile) throws Exception {
-        File decryptedFile = new File(encryptedFile.getParent(), 
-                                     encryptedFile.getName().replace(".encrypted", ""));
-        
-        // Đọc file đã mã hóa và giải mã
-        byte[] encryptedData = Files.readAllBytes(encryptedFile.toPath());
-        byte[] decryptedData = AESEncryption.decrypt(encryptedData, encryptionKey);
-        
-        // Ghi file đã giải mã
-        Files.write(decryptedFile.toPath(), decryptedData);
-        return decryptedFile;
-    }
+
     
     /**
      * Đọc response từ server
@@ -515,15 +422,15 @@ public class RelayClient {
             String response = readResponse(conn.getInputStream());
             
             if (responseCode == 200) {
-                LOGGER.info("✓ Đã đăng ký peer với relay server: " + localPeer.getDisplayName());
+                System.out.println("✓ Đã đăng ký peer với relay server: " + localPeer.getDisplayName());
                 return true;
             } else {
-                LOGGER.warning("⚠ Lỗi đăng ký peer: " + responseCode + " - " + response);
+                System.out.println("⚠ Lỗi đăng ký peer: " + responseCode + " - " + response);
                 return false;
             }
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "❌ Không thể đăng ký peer với relay: " + e.getMessage(), e);
+            System.out.println("❌ Không thể đăng ký peer với relay: " + e.getMessage());
             return false;
         }
     }
@@ -547,7 +454,7 @@ public class RelayClient {
             
             int responseCode = conn.getResponseCode();
             if (responseCode != 200) {
-                LOGGER.warning("⚠ Lỗi discover peers: " + responseCode);
+                System.out.println("⚠ Lỗi discover peers: " + responseCode);
                 return peers;
             }
             
@@ -557,10 +464,10 @@ public class RelayClient {
             // Format: {"peers":[{...},{...}],"count":2}
             peers = parsePeerListJson(response);
             
-            LOGGER.info("🔍 Đã phát hiện " + peers.size() + " peer(s) qua relay");
+            System.out.println("🔍 Đã phát hiện " + peers.size() + " peer(s) qua relay");
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "❌ Không thể discover peers qua relay: " + e.getMessage(), e);
+            System.out.println("❌ Không thể discover peers qua relay: " + e.getMessage());
         }
         
         return peers;
@@ -625,7 +532,7 @@ public class RelayClient {
             }
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Lỗi parse peer list JSON: " + e.getMessage(), e);
+            System.out.println("Lỗi parse peer list JSON: " + e.getMessage());
         }
         
         return peers;
@@ -696,14 +603,14 @@ public class RelayClient {
             
             int responseCode = conn.getResponseCode();
             if (responseCode == 200) {
-                LOGGER.info("✓ File registered for search: " + relayFileInfo.getFileName());
+                System.out.println("✓ File registered for search: " + relayFileInfo.getFileName());
                 return true;
             }
             
             return false;
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "❌ Error registering file for search: " + e.getMessage(), e);
+            System.out.println("❌ Error registering file for search: " + e.getMessage());
             return false;
         }
     }
@@ -732,17 +639,17 @@ public class RelayClient {
             
             int responseCode = conn.getResponseCode();
             if (responseCode != 200) {
-                LOGGER.warning("⚠ Search failed: " + responseCode);
+                System.out.println("⚠ Search failed: " + responseCode);
                 return results;
             }
             
             String response = readResponse(conn.getInputStream());
             results = parseFileSearchResults(response);
             
-            LOGGER.info("🔍 Search \"" + query + "\" -> " + results.size() + " results");
+            System.out.println("🔍 Search \"" + query + "\" -> " + results.size() + " results");
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "❌ Error searching files: " + e.getMessage(), e);
+            System.out.println("❌ Error searching files: " + e.getMessage());
         }
         
         return results;
@@ -794,7 +701,7 @@ public class RelayClient {
             }
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Error parsing file search results: " + e.getMessage(), e);
+            System.out.println("Error parsing file search results: " + e.getMessage());
         }
         
         return results;
@@ -843,14 +750,14 @@ public class RelayClient {
             
             int responseCode = conn.getResponseCode();
             if (responseCode == 200) {
-                LOGGER.info("✓ PIN created on relay: " + pin);
+                System.out.println("✓ PIN created on relay: " + pin);
                 return true;
             }
             
             return false;
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "❌ Error creating PIN: " + e.getMessage(), e);
+            System.out.println("❌ Error creating PIN: " + e.getMessage());
             return false;
         }
     }
@@ -872,7 +779,7 @@ public class RelayClient {
             
             int responseCode = conn.getResponseCode();
             if (responseCode != 200) {
-                LOGGER.warning("⚠ PIN not found or expired: " + pin);
+                System.out.println("⚠ PIN not found or expired: " + pin);
                 return null;
             }
             
@@ -903,11 +810,11 @@ public class RelayClient {
             fileInfo.setSenderId(senderId);
             fileInfo.setSenderName(senderName);
             
-            LOGGER.info("✓ PIN found: " + pin + " -> " + fileName);
+            System.out.println("✓ PIN found: " + pin + " -> " + fileName);
             return fileInfo;
             
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "❌ Error finding PIN: " + e.getMessage(), e);
+            System.out.println("❌ Error finding PIN: " + e.getMessage());
             return null;
         }
     }
