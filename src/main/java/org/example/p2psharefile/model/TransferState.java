@@ -17,7 +17,7 @@ import java.util.UUID;
 public class TransferState {
     
     // Default chunk size: 64KB (nhỏ hơn để dễ kiểm soát pause/resume)
-    public static final int DEFAULT_CHUNK_SIZE = 64 * 1024;
+    public static final int DEFAULT_CHUNK_SIZE = 256 * 1024;
     
     /**
      * Enum cho trạng thái transfer

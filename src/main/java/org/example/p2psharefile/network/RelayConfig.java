@@ -77,7 +77,7 @@ public class RelayConfig implements Serializable {
         this.downloadTimeout = 60000;
         
         // Chunking
-        this.chunkSize = 1024 * 1024; // 1MB
+        this.chunkSize = 512 * 1024; // 512MB
         this.maxRetries = 3;
         this.retryDelayMs = 1000;
         this.enableResume = true;
