@@ -641,6 +641,47 @@ public class P2PService {
         return fileTransferService != null ? fileTransferService.getRelayClient() : null;
     }
     
+    /**
+     * Lấy FileTransferService instance
+     */
+    public FileTransferService getFileTransferService() {
+        return fileTransferService;
+    }
+    
+    /**
+     * Pause P2P download
+     */
+    public void pauseP2PDownload() {
+        if (fileTransferService != null) {
+            fileTransferService.pauseP2PDownload();
+        }
+    }
+    
+    /**
+     * Resume P2P download
+     */
+    public void resumeP2PDownload() {
+        if (fileTransferService != null) {
+            fileTransferService.resumeP2PDownload();
+        }
+    }
+    
+    /**
+     * Cancel P2P download
+     */
+    public void cancelP2PDownload() {
+        if (fileTransferService != null) {
+            fileTransferService.cancelP2PDownload();
+        }
+    }
+    
+    /**
+     * Check if P2P download is paused
+     */
+    public boolean isP2PPaused() {
+        return fileTransferService != null && fileTransferService.isP2PPaused();
+    }
+    
     // ========== UltraView Preview Methods ==========
     
     /**

@@ -14,12 +14,12 @@ import java.util.Base64;
  */
 public class FakeJoinAttackTrustAll {
     public static void main(String[] args) {
-        String targetHost = "192.168.1.4";
+        String targetHost = "192.168.4.18";
         int targetPort = 8888;
 
         try {
             // PeerInfo giả
-            PeerInfo fakePeer = new PeerInfo("HACKER-ID-0001", "192.168.1.100", 9999, "FAKE_PEER_HACKER");
+            PeerInfo fakePeer = new PeerInfo("HACKER-ID-0001", "192.168.4.100", 9999, "FAKE_PEER_HACKER");
             fakePeer.setPublicKey(Base64.getEncoder().encodeToString("FAKE_PUBLIC_KEY".getBytes("UTF-8")));
 
             // Signature giả (Base64)

@@ -165,49 +165,22 @@ public class FileTransferService {
     
     /**
      * Xử lý yêu cầu download từ peer khác (Upload file)
+     * HỖ TRỢ CHUNKED TRANSFER VỚI RESUME
      */
     private void handleTransferRequest(Socket socket) {
-        try (ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+        try (DataInputStream dis = new DataInputStream(socket.getInputStream());
              DataOutputStream dos = new DataOutputStream(socket.getOutputStream())) {
             
-            // Nhận thông tin file cần download
-            String filePath = ois.readUTF();
+            // Đọc request type (hỗ trợ cả legacy và chunked)
+            String requestType = dis.readUTF();
             
-            File file = new File(filePath);
-            if (!file.exists() || !file.isFile()) {
-                dos.writeBoolean(false); // Báo lỗi
-                dos.writeUTF("File không tồn tại");
-                return;
+            if ("CHUNKED_REQUEST".equals(requestType)) {
+                // Chunked transfer protocol
+                handleChunkedUpload(dis, dos);
+            } else {
+                // Legacy stream-based protocol - xử lý như file path
+                handleLegacyUpload(requestType, dos);
             }
-            
-            System.out.println("📤 Đang upload file: " + file.getName());
-            
-            // Đọc file
-            byte[] fileData = Files.readAllBytes(file.toPath());
-            
-            // Nén file (nếu cần)
-            boolean compressed = FileCompression.shouldCompress(file.getName());
-            if (compressed) {
-                fileData = FileCompression.compress(fileData);
-                System.out.println("  ✓ Đã nén: " + fileData.length + " bytes");
-            }
-            
-            // Mã hóa file
-            byte[] encryptedData = AESEncryption.encrypt(fileData, encryptionKey);
-            System.out.println("  ✓ Đã mã hóa: " + encryptedData.length + " bytes");
-            
-            // Gửi thông tin file
-            dos.writeBoolean(true);               // Success
-            dos.writeUTF(file.getName());         // Tên file
-            dos.writeLong(file.length());         // Kích thước gốc
-            dos.writeBoolean(compressed);         // Có nén không
-            dos.writeLong(encryptedData.length);  // Kích thước sau mã hóa
-            
-            // Gửi dữ liệu file
-            dos.write(encryptedData);
-            dos.flush();
-            
-            System.out.println("  ✓ Upload hoàn tất");
             
         } catch (Exception e) {
             System.err.println("Lỗi khi upload file: " + e.getMessage());
@@ -219,6 +192,130 @@ public class FileTransferService {
                 // Ignore
             }
         }
+    }
+    
+    /**
+     * Xử lý upload theo chunks với hỗ trợ resume
+     */
+    private void handleChunkedUpload(DataInputStream dis, DataOutputStream dos) throws Exception {
+        String filePath = dis.readUTF();
+        int startChunk = dis.readInt();  // Resume từ chunk này
+        
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            dos.writeUTF("CHUNKED_ERROR");
+            dos.writeUTF("File không tồn tại");
+            return;
+        }
+        
+        LOGGER.info("📤 Chunked upload: " + file.getName() + " (từ chunk " + startChunk + ")");
+        
+        long fileSize = file.length();
+        int chunkSize = 256 * 1024;  // 256KB chunks
+        int totalChunks = (int) Math.ceil((double) fileSize / chunkSize);
+        
+        // Gửi metadata
+        dos.writeUTF("CHUNKED_SUCCESS");
+        dos.writeUTF(file.getName());
+        dos.writeLong(fileSize);
+        dos.writeInt(totalChunks);
+        dos.writeInt(chunkSize);
+        dos.flush();
+        
+        // Gửi từng chunk
+        try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+            byte[] buffer = new byte[chunkSize];
+            
+            for (int i = startChunk; i < totalChunks; i++) {
+                // Seek đến vị trí chunk
+                long pos = (long) i * chunkSize;
+                raf.seek(pos);
+                
+                // Đọc chunk
+                int bytesToRead = (int) Math.min(chunkSize, fileSize - pos);
+                int bytesRead = raf.read(buffer, 0, bytesToRead);
+                
+                if (bytesRead <= 0) break;
+                
+                // Mã hóa chunk
+                byte[] chunkData = new byte[bytesRead];
+                System.arraycopy(buffer, 0, chunkData, 0, bytesRead);
+                byte[] encryptedChunk = AESEncryption.encrypt(chunkData, encryptionKey);
+                
+                // Gửi chunk
+                dos.writeUTF("CHUNK");
+                dos.writeInt(i);                       // Chunk index
+                dos.writeInt(encryptedChunk.length);   // Encrypted size
+                dos.write(encryptedChunk);
+                dos.flush();
+                
+                // Đợi ACK
+                String ack = dis.readUTF();
+                if ("PAUSE".equals(ack)) {
+                    LOGGER.info("⏸ Client paused tại chunk " + i);
+                    // Đợi resume hoặc cancel
+                    String resumeMsg = dis.readUTF();
+                    if ("CANCEL".equals(resumeMsg)) {
+                        LOGGER.info("❌ Client cancelled download");
+                        return;
+                    }
+                    // Nếu RESUME thì tiếp tục
+                } else if ("CANCEL".equals(ack)) {
+                    LOGGER.info("❌ Client cancelled download");
+                    return;
+                }
+                // ACK received, tiếp tục
+            }
+            
+            // Gửi hoàn tất
+            dos.writeUTF("COMPLETE");
+            dos.flush();
+            
+            LOGGER.info("✅ Chunked upload hoàn tất: " + file.getName());
+        }
+    }
+    
+    /**
+     * Xử lý upload theo cách cũ (stream-based) để tương thích ngược
+     */
+    private void handleLegacyUpload(String filePath, DataOutputStream dos) throws Exception {
+        // filePath đã được đọc từ trước (requestType chính là filePath trong legacy mode)
+        
+        File file = new File(filePath);
+        if (!file.exists() || !file.isFile()) {
+            dos.writeBoolean(false);
+            dos.writeUTF("File không tồn tại");
+            return;
+        }
+        
+        System.out.println("📤 Legacy upload file: " + file.getName());
+        
+        // Đọc file
+        byte[] fileData = Files.readAllBytes(file.toPath());
+        
+        // Nén file (nếu cần)
+        boolean compressed = FileCompression.shouldCompress(file.getName());
+        if (compressed) {
+            fileData = FileCompression.compress(fileData);
+            System.out.println("  ✓ Đã nén: " + fileData.length + " bytes");
+        }
+        
+        // Mã hóa file
+        byte[] encryptedData = AESEncryption.encrypt(fileData, encryptionKey);
+        System.out.println("  ✓ Đã mã hóa: " + encryptedData.length + " bytes");
+        
+        // Gửi thông tin file
+        dos.writeBoolean(true);               // Success
+        dos.writeUTF(file.getName());         // Tên file
+        dos.writeLong(file.length());         // Kích thước gốc
+        dos.writeBoolean(compressed);         // Có nén không
+        dos.writeLong(encryptedData.length);  // Kích thước sau mã hóa
+        
+        // Gửi dữ liệu file
+        dos.write(encryptedData);
+        dos.flush();
+        
+        System.out.println("  ✓ Legacy upload hoàn tất");
     }
     
     /**
@@ -255,92 +352,239 @@ public class FileTransferService {
                     }
                 }
                 
-                // Download P2P bình thường
-                SSLSocket socket = securityManager.createSSLSocket(peer.getIpAddress(), peer.getPort());
-                socket.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 5000);
-                socket.setSoTimeout(60000); // Timeout 60 giây
-                socket.startHandshake();
-                
-                try (ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
-                     DataInputStream dis = new DataInputStream(socket.getInputStream())) {
-                    
-                    // Gửi yêu cầu download
-                    oos.writeUTF(fileInfo.getFilePath());
-                    oos.flush();
-                    
-                    // Nhận response
-                    boolean success = dis.readBoolean();
-                    if (!success) {
-                        String error = dis.readUTF();
-                        throw new IOException("Lỗi từ peer: " + error);
-                    }
-                    
-                    // Đọc thông tin file
-                    String fileName = dis.readUTF();
-                    long originalSize = dis.readLong();
-                    boolean compressed = dis.readBoolean();
-                    long encryptedSize = dis.readLong();
-                    
-                    System.out.println("  ⏳ Nhận file: " + fileName + " (" + encryptedSize + " bytes)");
-                    
-                    // Nhận dữ liệu file với progress
-                    byte[] encryptedData = new byte[(int) encryptedSize];
-                    int totalRead = 0;
-                    int bytesRead;
-                    byte[] buffer = new byte[BUFFER_SIZE];
-                    
-                    while (totalRead < encryptedSize) {
-                        bytesRead = dis.read(buffer, 0, 
-                            Math.min(buffer.length, (int)(encryptedSize - totalRead)));
-                        if (bytesRead == -1) break;
-                        
-                        System.arraycopy(buffer, 0, encryptedData, totalRead, bytesRead);
-                        totalRead += bytesRead;
-                        
-                        // Thông báo progress
-                        if (listener != null) {
-                            listener.onProgress(totalRead, encryptedSize);
-                        }
-                    }
-                    
-                    System.out.println("  ✓ Đã nhận: " + totalRead + " bytes");
-                    
-                    // Giải mã
-                    byte[] decryptedData = AESEncryption.decrypt(encryptedData, encryptionKey);
-                    System.out.println("  ✓ Đã giải mã");
-                    
-                    // Giải nén (nếu đã nén)
-                    byte[] finalData = compressed ? 
-                        FileCompression.decompress(decryptedData) : decryptedData;
-                    
-                    if (compressed) {
-                        System.out.println("  ✓ Đã giải nén");
-                    }
-                    
-                    // Lưu file
-                    File saveDir = new File(saveDirectory);
-                    if (!saveDir.exists()) {
-                        saveDir.mkdirs();
-                    }
-                    
-                    File savedFile = new File(saveDir, fileName);
-                    Files.write(savedFile.toPath(), finalData);
-                    
-                    System.out.println("  ✅ Download hoàn tất: " + savedFile.getAbsolutePath());
-                    
-                    if (listener != null) {
-                        listener.onComplete(savedFile);
-                    }
-                    
-                } finally {
-                    socket.close();
-                }
+                // Download P2P với chunked protocol
+                downloadChunkedP2P(peer, fileInfo, saveDirectory, listener);
                 
             } catch (Exception e) {
                 System.err.println("Lỗi khi download file: " + e.getMessage());
                 e.printStackTrace();
                 if (listener != null) {
                     listener.onError(e);
+                }
+            }
+        });
+    }
+    
+    // Trạng thái pause/resume cho P2P download
+    private volatile boolean p2pPaused = false;
+    private volatile boolean p2pCancelled = false;
+    private volatile int resumeFromChunk = 0;
+    private volatile String currentP2PDownloadFile = null;
+    
+    /**
+     * Pause P2P download
+     */
+    public void pauseP2PDownload() {
+        p2pPaused = true;
+        LOGGER.info("⏸ P2P download paused");
+    }
+    
+    /**
+     * Resume P2P download
+     */
+    public void resumeP2PDownload() {
+        p2pPaused = false;
+        synchronized (this) {
+            notifyAll();
+        }
+        LOGGER.info("▶ P2P download resumed");
+    }
+    
+    /**
+     * Cancel P2P download
+     */
+    public void cancelP2PDownload() {
+        p2pCancelled = true;
+        p2pPaused = false;
+        synchronized (this) {
+            notifyAll();
+        }
+        LOGGER.info("❌ P2P download cancelled");
+    }
+    
+    /**
+     * Check if P2P download is paused
+     */
+    public boolean isP2PPaused() {
+        return p2pPaused;
+    }
+    
+    /**
+     * Download file từ peer sử dụng chunked protocol với resume support
+     */
+    private void downloadChunkedP2P(PeerInfo peer, FileInfo fileInfo, 
+                                     String saveDirectory, TransferProgressListener listener) {
+        SSLSocket socket = null;
+        try {
+            LOGGER.info("📥 Chunked download: " + fileInfo.getFileName() + " từ " + peer);
+            
+            // Reset trạng thái
+            p2pPaused = false;
+            p2pCancelled = false;
+            currentP2PDownloadFile = fileInfo.getFileName();
+            
+            // Kiểm tra file .part có tồn tại không (để resume)
+            File saveDir = new File(saveDirectory);
+            if (!saveDir.exists()) saveDir.mkdirs();
+            
+            File destFile = new File(saveDir, fileInfo.getFileName());
+            File tempFile = new File(saveDir, fileInfo.getFileName() + ".part");
+            
+            // Nếu có file .part, tính chunk để resume
+            if (tempFile.exists() && resumeFromChunk > 0) {
+                LOGGER.info("📍 Resume từ chunk " + resumeFromChunk);
+            } else {
+                resumeFromChunk = 0;
+            }
+            
+            // Kết nối
+            socket = securityManager.createSSLSocket(peer.getIpAddress(), peer.getPort());
+            socket.connect(new InetSocketAddress(peer.getIpAddress(), peer.getPort()), 5000);
+            socket.setSoTimeout(120000);  // 2 phút timeout cho chunked transfer
+            socket.startHandshake();
+            
+            DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+            DataInputStream dis = new DataInputStream(socket.getInputStream());
+            
+            // Gửi chunked request
+            dos.writeUTF("CHUNKED_REQUEST");
+            dos.writeUTF(fileInfo.getFilePath());
+            dos.writeInt(resumeFromChunk);
+            dos.flush();
+            
+            // Đọc response
+            String msgType = dis.readUTF();
+            if ("CHUNKED_ERROR".equals(msgType)) {
+                String error = dis.readUTF();
+                throw new IOException("Server error: " + error);
+            }
+            
+            // Parse metadata
+            String fileName = dis.readUTF();
+            long totalSize = dis.readLong();
+            int totalChunks = dis.readInt();
+            int chunkSize = dis.readInt();
+            
+            LOGGER.info(String.format("📦 File: %s, Size: %d, Chunks: %d, ChunkSize: %d", 
+                        fileName, totalSize, totalChunks, chunkSize));
+            
+            // Tính lại vị trí resume
+            long bytesAlreadyReceived = (long) resumeFromChunk * chunkSize;
+            
+            // Mở file để ghi (append nếu resume)
+            try (RandomAccessFile raf = new RandomAccessFile(tempFile, "rw")) {
+                if (resumeFromChunk > 0) {
+                    raf.seek(tempFile.length());
+                }
+                
+                long totalBytesReceived = bytesAlreadyReceived;
+                
+                // Nhận từng chunk
+                while (true) {
+                    // Check cancel
+                    if (p2pCancelled) {
+                        dos.writeUTF("CANCEL");
+                        dos.flush();
+                        LOGGER.info("❌ Download cancelled by user");
+                        currentP2PDownloadFile = null;
+                        return;
+                    }
+                    
+                    // Check pause
+                    while (p2pPaused && !p2pCancelled) {
+                        dos.writeUTF("PAUSE");
+                        dos.flush();
+                        if (listener != null) {
+                            listener.onProgress(totalBytesReceived, totalSize);
+                        }
+                        LOGGER.info("⏸ Download paused tại byte " + totalBytesReceived);
+                        
+                        // Đợi resume hoặc cancel
+                        synchronized (this) {
+                            try {
+                                wait(1000);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
+                        }
+                    }
+                    
+                    if (p2pCancelled) continue;
+                    
+                    // Đọc message type
+                    String msg = dis.readUTF();
+                    
+                    if ("COMPLETE".equals(msg)) {
+                        break;
+                    }
+                    
+                    if (!"CHUNK".equals(msg)) {
+                        throw new IOException("Unexpected message: " + msg);
+                    }
+                    
+                    // Đọc chunk
+                    int chunkIndex = dis.readInt();
+                    int encryptedSize = dis.readInt();
+                    byte[] encryptedData = new byte[encryptedSize];
+                    dis.readFully(encryptedData);
+                    
+                    // Giải mã chunk
+                    byte[] decryptedData = AESEncryption.decrypt(encryptedData, encryptionKey);
+                    
+                    // Ghi vào file
+                    raf.write(decryptedData);
+                    
+                    // Cập nhật progress
+                    totalBytesReceived += decryptedData.length;
+                    resumeFromChunk = chunkIndex + 1;
+                    
+                    // Thông báo progress
+                    if (listener != null) {
+                        listener.onProgress(totalBytesReceived, totalSize);
+                    }
+                    
+                    // Gửi ACK
+                    dos.writeUTF("ACK");
+                    dos.flush();
+                }
+            }
+            
+            // Rename temp file thành file cuối cùng
+            if (tempFile.exists()) {
+                Files.move(tempFile.toPath(), destFile.toPath(), 
+                          java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            
+            // Reset
+            resumeFromChunk = 0;
+            currentP2PDownloadFile = null;
+            
+            LOGGER.info("✅ Chunked download hoàn tất: " + destFile.getAbsolutePath());
+            
+            if (listener != null) {
+                listener.onComplete(destFile);
+            }
+            
+        } catch (Exception e) {
+            LOGGER.severe("❌ Download error: " + e.getMessage());
+            e.printStackTrace();
+            currentP2PDownloadFile = null;
+            if (listener != null) {
+                listener.onError(e);
+            }
+        } finally {
+            if (socket != null) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    // Ignore
+                }
+            }
+        }
+    }    
+    /**
+     * Download file với fallback tự động từ P2P sang Relay
                 }
             }
         });

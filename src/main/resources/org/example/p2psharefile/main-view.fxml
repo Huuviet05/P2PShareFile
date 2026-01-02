@@ -358,13 +358,62 @@
         </HBox>
     </center>
     
-    <!-- Small footer bar (same color as header) -->
+    <!-- Footer với thanh tiến trình download -->
     <bottom>
-        <HBox styleClass="footer-bar" alignment="CENTER_LEFT">
-            <HBox spacing="8" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
-                <Label text="" styleClass="footer-text"/>
+        <VBox styleClass="footer-container">
+            <!-- Thanh tiến trình download toàn cục (ẩn mặc định) -->
+            <HBox fx:id="globalProgressBar" spacing="12" alignment="CENTER_LEFT" 
+                  styleClass="global-progress-bar" visible="false" managed="false">
+                <padding>
+                    <Insets top="8" right="16" bottom="8" left="16"/>
+                </padding>
+                
+                <!-- Icon và tên file -->
+                <Label text="⬇" styleClass="progress-icon"/>
+                <VBox spacing="2" HBox.hgrow="ALWAYS" minWidth="0">
+                    <HBox spacing="8" alignment="CENTER_LEFT">
+                        <Label fx:id="globalProgressFileName" text="Đang tải..." 
+                               styleClass="progress-filename" maxWidth="300"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="globalProgressPercent" text="0%" styleClass="progress-percent"/>
+                    </HBox>
+                    <ProgressBar fx:id="globalProgressIndicator" progress="0" 
+                                 maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="global-progress"/>
+                </VBox>
+                
+                <!-- Thông tin chi tiết -->
+                <VBox spacing="2" alignment="CENTER_RIGHT" minWidth="120">
+                    <HBox spacing="4" alignment="CENTER_RIGHT">
+                        <Label fx:id="globalProgressSize" text="0 MB / 0 MB" styleClass="progress-detail"/>
+                    </HBox>
+                    <HBox spacing="4" alignment="CENTER_RIGHT">
+                        <Label fx:id="globalProgressSpeed" text="0 KB/s" styleClass="progress-speed"/>
+                        <Label text="•" styleClass="progress-sep"/>
+                        <Label fx:id="globalProgressEta" text="--:--" styleClass="progress-eta"/>
+                    </HBox>
+                </VBox>
+                
+                <!-- Nút điều khiển -->
+                <HBox spacing="6" alignment="CENTER">
+                    <Button fx:id="globalPauseBtn" text="⏸" styleClass="progress-control-btn" 
+                            onAction="#handleGlobalPause"/>
+                    <Button fx:id="globalResumeBtn" text="▶" styleClass="progress-control-btn"
+                            onAction="#handleGlobalResume" visible="false" managed="false"/>
+                    <Button fx:id="globalCancelBtn" text="✕" styleClass="progress-control-btn-danger"
+                            onAction="#handleGlobalCancel"/>
+                </HBox>
             </HBox>
-        </HBox>
+            
+            <!-- Footer bar bình thường -->
+            <HBox styleClass="footer-bar" alignment="CENTER_LEFT">
+                <HBox spacing="8" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
+                    <Label fx:id="footerStatusLabel" text="" styleClass="footer-text"/>
+                </HBox>
+                <HBox spacing="8" alignment="CENTER_RIGHT">
+                    <Label fx:id="footerChunksLabel" text="" styleClass="footer-text-muted"/>
+                </HBox>
+            </HBox>
+        </VBox>
     </bottom>
     
 </BorderPane>

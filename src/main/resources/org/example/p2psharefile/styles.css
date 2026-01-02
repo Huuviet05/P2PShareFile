@@ -1675,3 +1675,116 @@
 	-fx-font-size: 12;
 	-fx-text-fill: #9ca3af;
 }
+/* ═══════════════════════════════════════════════════════════════════════════════
+   GLOBAL PROGRESS BAR (Footer)
+   Thanh tiến trình download cố định ở dưới cùng
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.footer-container {
+	-fx-background-color: transparent;
+}
+
+.global-progress-bar {
+	-fx-background-color: linear-gradient(to right, #1e3a5f, #1f2937);
+	-fx-border-color: #3b82f6;
+	-fx-border-width: 1 0 0 0;
+	-fx-min-height: 56;
+}
+
+.progress-icon {
+	-fx-font-size: 20;
+	-fx-text-fill: #60a5fa;
+}
+
+.progress-filename {
+	-fx-font-size: 13;
+	-fx-font-weight: 600;
+	-fx-text-fill: #ffffff;
+	-fx-wrap-text: false;
+	-fx-text-overrun: ellipsis;
+}
+
+.progress-percent {
+	-fx-font-size: 14;
+	-fx-font-weight: bold;
+	-fx-text-fill: #60a5fa;
+}
+
+.global-progress {
+	-fx-pref-height: 6;
+	-fx-min-height: 6;
+	-fx-max-height: 6;
+	-fx-background-color: #374151;
+	-fx-background-radius: 3;
+}
+
+.global-progress .track {
+	-fx-background-color: #374151;
+	-fx-background-radius: 3;
+}
+
+.global-progress .bar {
+	-fx-background-color: linear-gradient(to right, #3b82f6, #60a5fa, #93c5fd);
+	-fx-background-radius: 3;
+	-fx-background-insets: 0;
+}
+
+.progress-detail {
+	-fx-font-size: 11;
+	-fx-text-fill: #9ca3af;
+}
+
+.progress-speed {
+	-fx-font-size: 11;
+	-fx-font-weight: 600;
+	-fx-text-fill: #22c55e;
+}
+
+.progress-eta {
+	-fx-font-size: 11;
+	-fx-text-fill: #9ca3af;
+}
+
+.progress-sep {
+	-fx-font-size: 10;
+	-fx-text-fill: #4b5563;
+}
+
+.progress-control-btn {
+	-fx-background-color: #374151;
+	-fx-text-fill: #ffffff;
+	-fx-font-size: 12;
+	-fx-min-width: 28;
+	-fx-min-height: 28;
+	-fx-max-width: 28;
+	-fx-max-height: 28;
+	-fx-background-radius: 6;
+	-fx-cursor: hand;
+	-fx-padding: 0;
+}
+
+.progress-control-btn:hover {
+	-fx-background-color: #4b5563;
+}
+
+.progress-control-btn-danger {
+	-fx-background-color: #dc2626;
+	-fx-text-fill: #ffffff;
+	-fx-font-size: 12;
+	-fx-min-width: 28;
+	-fx-min-height: 28;
+	-fx-max-width: 28;
+	-fx-max-height: 28;
+	-fx-background-radius: 6;
+	-fx-cursor: hand;
+	-fx-padding: 0;
+}
+
+.progress-control-btn-danger:hover {
+	-fx-background-color: #b91c1c;
+}
+
+.footer-text-muted {
+	-fx-font-size: 11;
+	-fx-text-fill: #6b7280;
+}
