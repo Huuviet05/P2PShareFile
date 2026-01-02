@@ -34,7 +34,7 @@ public class P2PService {
     private final SecurityManager securityManager;
     private final PeerDiscovery peerDiscovery;
     private final FileSearchService fileSearchService;
-    private final FileTransferService fileTransferService;
+    private final ChunkedFileTransferService chunkedTransferService;
     private final PINCodeService pinCodeService;
     
     // UltraView Preview Services
@@ -87,7 +87,7 @@ public class P2PService {
             // Khởi tạo các service (với SecurityManager)
             this.peerDiscovery = new PeerDiscovery(localPeer, securityManager);
             this.fileSearchService = new FileSearchService(localPeer, peerDiscovery, securityManager);
-            this.fileTransferService = new FileTransferService(localPeer, securityManager);
+            this.chunkedTransferService = new ChunkedFileTransferService(localPeer, securityManager);
             this.pinCodeService = new PINCodeService(localPeer, peerDiscovery, securityManager);
             
             // UltraView: Khởi tạo preview services
@@ -212,14 +212,14 @@ public class P2PService {
      * @param config Cấu hình relay server
      */
     public void enableRelay(RelayConfig config) {
-        fileTransferService.enableRelay(config);
+        chunkedTransferService.enableRelay(config);
         
         // Set RelayClient cho FileSearchService để tự động upload file khi share
-        if (fileTransferService.getRelayClient() != null) {
-            fileSearchService.setRelayClient(fileTransferService.getRelayClient());
+        if (chunkedTransferService.getRelayClient() != null) {
+            fileSearchService.setRelayClient(chunkedTransferService.getRelayClient());
             
             // Set RelayClient cho PINCodeService để sync PIN qua Internet
-            pinCodeService.setRelayClient(fileTransferService.getRelayClient());
+            pinCodeService.setRelayClient(chunkedTransferService.getRelayClient());
         }
         
         System.out.println("✓ Relay đã được bật: " + config.getServerUrl());
@@ -232,7 +232,7 @@ public class P2PService {
      * Kiểm tra relay có được bật không
      */
     public boolean isRelayEnabled() {
-        return fileTransferService.isRelayEnabled();
+        return chunkedTransferService.isRelayEnabled();
     }
 
     /**
@@ -253,16 +253,17 @@ public class P2PService {
         System.out.println("   Security: TLS + ECDSA Signatures");
 
         try {
-            // ⭐ BƯỚC 1: Start FileTransferService TRƯỚC để lấy port thực
-            System.out.println("\n[1/5] Khởi động FileTransferService (TLS)...");
-            fileTransferService.start();
-
-            // Port giờ đã được set bởi FileTransferService
-            int actualPort = localPeer.getPort();
-            System.out.println("✓ FileTransferService (TLS) started on port: " + actualPort);
+            // ⭐ BƯỚC 1: Start ChunkedFileTransferService
+            System.out.println("\n[1/6] Khởi động ChunkedFileTransferService (TLS)...");
+            chunkedTransferService.start();
+            
+            // Port được set bởi ChunkedFileTransferService
+            int actualPort = chunkedTransferService.getPort();
+            localPeer.setPort(actualPort);  // Cập nhật port cho localPeer
+            System.out.println("✓ ChunkedFileTransferService started on port: " + actualPort);
 
             // ⭐ BƯỚC 2: Start FileSearchService
-            System.out.println("\n[2/5] Khởi động FileSearchService (TLS)...");
+            System.out.println("\n[2/6] Khởi động FileSearchService (TLS)...");
             fileSearchService.start();
             System.out.println("✓ FileSearchService (TLS) started");
             
@@ -271,25 +272,25 @@ public class P2PService {
             pinCodeService.start();
             System.out.println("✓ PINCodeService (TLS + Signatures) started");
             
-            // ⭐ BƯỚC 3.5: Start PreviewService (UltraView)
-            System.out.println("\n[3.5/6] Khởi động PreviewService (UltraView)...");
+            // ⭐ BƯỚC 4: Start PreviewService (UltraView)
+            System.out.println("\n[4/6] Khởi động PreviewService (UltraView)...");
             previewService.start();
             System.out.println("✓ PreviewService started on port: " + previewService.getPreviewPort());
 
-            // ⭐ BƯỚC 4: Start PeerDiscovery NHƯNG CHƯA GỬI JOIN
-            System.out.println("\n[4/6] Khởi động PeerDiscovery (TLS + Signatures, listening mode)...");
+            // ⭐ BƯỚC 5: Start PeerDiscovery NHƯNG CHƯA GỬI JOIN
+            System.out.println("\n[5/6] Khởi động PeerDiscovery (TLS + Signatures)...");
             peerDiscovery.start(false);  // ← false = không gửi JOIN ngay
             System.out.println("✓ PeerDiscovery (TLS + Signatures) started");
 
-            // ⭐ BƯỚC 5: GIỜ MỚI GỬI JOIN (sau khi TẤT CẢ đã sẵn sàng)
-            System.out.println("\n[5/6] Gửi signed JOIN announcement...");
+            // GIỜ MỚI GỬI JOIN (sau khi TẤT CẢ đã sẵn sàng)
+            System.out.println("\nGửi signed JOIN announcement...");
             peerDiscovery.sendJoinAnnouncement();
             
             // ⭐ BƯỚC 6: Đăng ký với relay server (chỉ đăng ký, KHÔNG discover peers ngay)
             // Việc discover peers qua relay sẽ được thực hiện khi chuyển sang Relay mode
-            if (fileTransferService.isRelayEnabled()) {
+            if (chunkedTransferService.isRelayEnabled()) {
                 System.out.println("\n[6/6] Đăng ký peer với relay server...");
-                RelayClient relayClient = fileTransferService.getRelayClient();
+                RelayClient relayClient = chunkedTransferService.getRelayClient();
                 if (relayClient != null) {
                     boolean registered = relayClient.registerPeer(localPeer);
                     if (registered) {
@@ -335,7 +336,7 @@ public class P2PService {
 
         pinCodeService.stop();
         previewService.stop();  // UltraView
-        fileTransferService.stop();
+        chunkedTransferService.stop();
         fileSearchService.stop();
         peerDiscovery.stop();
 
@@ -471,7 +472,7 @@ public class P2PService {
     }
 
     /**
-     * Download file từ peer
+     * Download file từ peer (sử dụng ChunkedFileTransferService)
      *
      * @param peer Peer có file
      * @param fileInfo Thông tin file cần download
@@ -483,11 +484,12 @@ public class P2PService {
             return;
         }
 
-        fileTransferService.downloadFile(
+        // Sử dụng ChunkedFileTransferService cho download
+        chunkedTransferService.downloadFile(
                 peer,
                 fileInfo,
                 saveDirectory,
-                new FileTransferService.TransferProgressListener() {
+                new ChunkedFileTransferService.TransferProgressListener() {
                     @Override
                     public void onProgress(long bytesTransferred, long totalBytes) {
                         notifyTransferProgress(fileInfo.getFileName(), bytesTransferred, totalBytes);
@@ -514,6 +516,19 @@ public class P2PService {
                     }
                 }
         );
+    }
+    
+    /**
+     * Download file với ChunkedTransferListener (cho UI chi tiết)
+     */
+    public TransferState downloadFileChunked(PeerInfo peer, FileInfo fileInfo, 
+                                              String saveDirectory,
+                                              ChunkedFileTransferService.ChunkedTransferListener listener) {
+        if (!running) {
+            System.err.println("❌ P2P Service chưa khởi động");
+            return null;
+        }
+        return chunkedTransferService.downloadFileChunked(peer, fileInfo, saveDirectory, listener);
     }
 
     /**
@@ -638,48 +653,86 @@ public class P2PService {
      * Lấy RelayClient instance để download/upload
      */
     public org.example.p2psharefile.network.RelayClient getRelayClient() {
-        return fileTransferService != null ? fileTransferService.getRelayClient() : null;
+        return chunkedTransferService != null ? chunkedTransferService.getRelayClient() : null;
     }
     
     /**
-     * Lấy FileTransferService instance
+     * Lấy ChunkedFileTransferService instance
      */
-    public FileTransferService getFileTransferService() {
-        return fileTransferService;
+    public ChunkedFileTransferService getChunkedTransferService() {
+        return chunkedTransferService;
     }
     
     /**
-     * Pause P2P download
+     * Pause tất cả downloads
      */
     public void pauseP2PDownload() {
-        if (fileTransferService != null) {
-            fileTransferService.pauseP2PDownload();
+        if (chunkedTransferService != null) {
+            chunkedTransferService.pauseAllDownloads();
         }
     }
     
     /**
-     * Resume P2P download
+     * Pause download cụ thể bằng transferId
+     */
+    public void pauseDownload(String transferId) {
+        if (chunkedTransferService != null) {
+            chunkedTransferService.pauseTransfer(transferId);
+        }
+    }
+    
+    /**
+     * Resume tất cả downloads
      */
     public void resumeP2PDownload() {
-        if (fileTransferService != null) {
-            fileTransferService.resumeP2PDownload();
+        if (chunkedTransferService != null) {
+            chunkedTransferService.resumeAllDownloads();
         }
     }
     
     /**
-     * Cancel P2P download
+     * Resume download cụ thể bằng transferId
+     */
+    public void resumeDownload(String transferId) {
+        if (chunkedTransferService != null) {
+            chunkedTransferService.resumeTransfer(transferId);
+        }
+    }
+    
+    /**
+     * Cancel tất cả downloads
      */
     public void cancelP2PDownload() {
-        if (fileTransferService != null) {
-            fileTransferService.cancelP2PDownload();
+        if (chunkedTransferService != null) {
+            chunkedTransferService.cancelAllDownloads();
         }
     }
     
     /**
-     * Check if P2P download is paused
+     * Cancel download cụ thể bằng transferId
+     */
+    public void cancelDownload(String transferId) {
+        if (chunkedTransferService != null) {
+            chunkedTransferService.cancelTransfer(transferId);
+        }
+    }
+    
+    /**
+     * Check if có active download
      */
     public boolean isP2PPaused() {
-        return fileTransferService != null && fileTransferService.isP2PPaused();
+        if (chunkedTransferService != null) {
+            TransferState state = chunkedTransferService.getFirstActiveTransfer();
+            return state != null && state.getStatus() == TransferState.TransferStatus.PAUSED;
+        }
+        return false;
+    }
+    
+    /**
+     * Lấy transfer state hiện tại
+     */
+    public TransferState getCurrentTransferState() {
+        return chunkedTransferService != null ? chunkedTransferService.getFirstActiveTransfer() : null;
     }
     
     // ========== UltraView Preview Methods ==========
@@ -829,7 +882,7 @@ public class P2PService {
         Thread heartbeatThread = new Thread(() -> {
             while (running) {
                 try {
-                    Thread.sleep(30000); // 30 giây
+                    Thread.sleep(10000); // 10 giây
                     if (running && relayClient != null) {
                         relayClient.sendHeartbeat(localPeer.getPeerId());
                     }
@@ -862,8 +915,8 @@ public class P2PService {
         pinCodeService.setP2POnlyMode(p2pOnly);
         
         // Nếu chuyển sang Relay mode, trigger discover peers qua relay
-        if (!p2pOnly && fileTransferService.isRelayEnabled()) {
-            RelayClient relayClient = fileTransferService.getRelayClient();
+        if (!p2pOnly && chunkedTransferService.isRelayEnabled()) {
+            RelayClient relayClient = chunkedTransferService.getRelayClient();
             if (relayClient != null) {
                 new Thread(() -> {
                     try {

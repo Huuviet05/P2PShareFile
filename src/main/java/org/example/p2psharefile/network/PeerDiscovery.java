@@ -30,10 +30,10 @@ import java.util.concurrent.*;
 public class PeerDiscovery {
 
     private static final int DISCOVERY_PORT = 8888;
-    private static final int HEARTBEAT_INTERVAL = 5000; // 5 giây
-    private static final int PEER_TIMEOUT = 15000; // 15 giây
-    private static final int SCAN_INTERVAL = 10000; // 10 giây quét lại
-    private static final int CONNECTION_TIMEOUT = 2000; // 2 giây timeout kết nối
+    private static final int HEARTBEAT_INTERVAL = 5000; // 5 giây - gửi heartbeat cho peer khác trong LAN
+    private static final int PEER_TIMEOUT = 10000; // 10 giây - nếu không nhận heartbeat thì coi peer offline
+    private static final int SCAN_INTERVAL = 10000; // 0 giây - quét lại danh sách peer trong LAN
+    private static final int CONNECTION_TIMEOUT = 2000; // 2 giây - timeout khi kết nối peer khác
 
     private final PeerInfo localPeer;
     private final SecurityManager securityManager;
@@ -214,8 +214,6 @@ public class PeerDiscovery {
                 socket.close();
                 return;
             }
-            
-            System.out.println("✅ [Security] Signature verified for peer: " + remotePeer.getDisplayName());
 
             if ("JOIN".equals(messageType) || "HEARTBEAT".equals(messageType)) {
                 // Tạo signed response
@@ -225,8 +223,12 @@ public class PeerDiscovery {
                 oos.writeObject(response);
                 oos.flush();
 
-                System.out.println("📩 Nhận " + messageType + " từ: " + remotePeer.getDisplayName() +
-                        " (" + realIP + ":" + remotePeer.getPort() + ")");
+                // Chỉ log nếu là peer mới (giảm log verbose)
+                boolean isNewPeer = !discoveredPeers.containsKey(remotePeer.getPeerId());
+                if (isNewPeer) {
+                    System.out.println("📩 Nhận " + messageType + " từ: " + remotePeer.getDisplayName() +
+                            " (" + realIP + ":" + remotePeer.getPort() + ")");
+                }
 
                 handleDiscoveredPeer(remotePeer);
             }
@@ -382,10 +384,7 @@ public class PeerDiscovery {
                     }
                 }
 
-                // Log mỗi 30 giây
-                if (count % 6 == 1) {
-                    System.out.println("💓 Heartbeat #" + count + " | Online peers: " + discoveredPeers.size());
-                }
+                // Không log heartbeat thường xuyên (giảm verbose)
 
                 Thread.sleep(HEARTBEAT_INTERVAL);
 
@@ -452,14 +451,7 @@ public class PeerDiscovery {
         discoveredPeers.put(peer.getPeerId(), peer);
 
         if (isNewPeer) {
-            System.out.println("\n✅ ========== PEER MỚI ==========");
-            System.out.println("   Name: " + peer.getDisplayName());
-            System.out.println("   IP: " + peer.getIpAddress());
-            System.out.println("   Port: " + peer.getPort());
-            System.out.println("   ID: " + peer.getPeerId());
-            System.out.println("   Total peers: " + discoveredPeers.size());
-            System.out.println("==================================\n");
-
+            System.out.println("✅ Phát hiện peer: " + peer.getDisplayName() + " (" + peer.getIpAddress() + ":" + peer.getPort() + ")");
             notifyPeerDiscovered(peer);
         }
     }

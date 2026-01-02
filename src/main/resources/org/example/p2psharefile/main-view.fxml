@@ -316,31 +316,7 @@
                                         styleClass="btn-ghost"/>
                                 <Button fx:id="downloadButton" text="⬇ Tải về" onAction="#handleDownload"
                                         styleClass="btn-primary"/>
-                                <Button fx:id="pauseDownloadButton" text="⏸ Tạm dừng" onAction="#handlePauseDownload"
-                                        styleClass="btn-warning" visible="false" managed="false"/>
-                                <Button fx:id="resumeDownloadButton" text="▶ Tiếp tục" onAction="#handleResumeDownload"
-                                        styleClass="btn-success" visible="false" managed="false"/>
-                                <Button fx:id="cancelDownloadButton" text="✕ Hủy" onAction="#handleCancelDownload"
-                                        styleClass="btn-danger" visible="false" managed="false"/>
                             </HBox>
-                            
-                            <!-- Download progress bar -->
-                            <VBox fx:id="downloadProgressBox" spacing="5" visible="false" managed="false" 
-                                  styleClass="download-progress-container">
-                                <HBox spacing="10" alignment="CENTER_LEFT">
-                                    <Label fx:id="downloadFileNameLabel" text="" styleClass="download-filename"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="downloadSpeedLabel" text="" styleClass="download-speed"/>
-                                </HBox>
-                                <ProgressBar fx:id="downloadProgressBar" progress="0" maxWidth="Infinity" 
-                                            styleClass="download-progress"/>
-                                <HBox spacing="10" alignment="CENTER">
-                                    <Label fx:id="downloadPercentLabel" text="0%" styleClass="download-percent"/>
-                                    <Label fx:id="downloadSizeLabel" text="" styleClass="download-size"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label fx:id="downloadTimeLabel" text="" styleClass="download-time"/>
-                                </HBox>
-                            </VBox>
                         </VBox>
                         
                         <!-- Status bar -->
@@ -358,59 +334,56 @@
         </HBox>
     </center>
     
-    <!-- Footer với thanh tiến trình download -->
+    <!-- Footer hiện đại với thanh tiến trình cố định -->
     <bottom>
-        <VBox styleClass="footer-container">
-            <!-- Thanh tiến trình download toàn cục (ẩn mặc định) -->
-            <HBox fx:id="globalProgressBar" spacing="12" alignment="CENTER_LEFT" 
-                  styleClass="global-progress-bar" visible="false" managed="false">
-                <padding>
-                    <Insets top="8" right="16" bottom="8" left="16"/>
-                </padding>
+        <VBox styleClass="modern-footer" spacing="0">
+            
+            <!-- Transfer Progress - Luôn hiển thị -->
+            <HBox fx:id="globalTransferBox" styleClass="transfer-bar" spacing="20" alignment="CENTER">
+                <!-- Label bên trái -->
+                <Label text="Thanh tiến trình" styleClass="transfer-label"/>
                 
-                <!-- Icon và tên file -->
-                <Label text="⬇" styleClass="progress-icon"/>
-                <VBox spacing="2" HBox.hgrow="ALWAYS" minWidth="0">
-                    <HBox spacing="8" alignment="CENTER_LEFT">
-                        <Label fx:id="globalProgressFileName" text="Đang tải..." 
-                               styleClass="progress-filename" maxWidth="300"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Label fx:id="globalProgressPercent" text="0%" styleClass="progress-percent"/>
-                    </HBox>
+                <!-- Progress Bar Center - TO HƠN -->
+                <HBox spacing="16" alignment="CENTER" HBox.hgrow="ALWAYS" styleClass="transfer-progress-center">
                     <ProgressBar fx:id="globalProgressIndicator" progress="0" 
-                                 maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="global-progress"/>
-                </VBox>
+                                prefHeight="24" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="beautiful-progress"/>
+                    <Label fx:id="globalProgressPercent" text="0%" styleClass="transfer-percent-badge"/>
+                </HBox>
                 
-                <!-- Thông tin chi tiết -->
-                <VBox spacing="2" alignment="CENTER_RIGHT" minWidth="120">
-                    <HBox spacing="4" alignment="CENTER_RIGHT">
-                        <Label fx:id="globalProgressSize" text="0 MB / 0 MB" styleClass="progress-detail"/>
-                    </HBox>
-                    <HBox spacing="4" alignment="CENTER_RIGHT">
-                        <Label fx:id="globalProgressSpeed" text="0 KB/s" styleClass="progress-speed"/>
-                        <Label text="•" styleClass="progress-sep"/>
-                        <Label fx:id="globalProgressEta" text="--:--" styleClass="progress-eta"/>
-                    </HBox>
-                </VBox>
-                
-                <!-- Nút điều khiển -->
-                <HBox spacing="6" alignment="CENTER">
-                    <Button fx:id="globalPauseBtn" text="⏸" styleClass="progress-control-btn" 
+                <!-- Info & Controls Right -->
+                <HBox spacing="10" alignment="CENTER_RIGHT" styleClass="transfer-controls-right">
+                    <Label fx:id="globalProgressSpeed" text="" styleClass="transfer-speed-badge"/>
+                    <Label fx:id="globalProgressFileName" text="" styleClass="transfer-status-badge"/>
+                    <Button fx:id="globalPauseBtn" text="⏸" styleClass="btn-control-modern"
                             onAction="#handleGlobalPause"/>
-                    <Button fx:id="globalResumeBtn" text="▶" styleClass="progress-control-btn"
-                            onAction="#handleGlobalResume" visible="false" managed="false"/>
-                    <Button fx:id="globalCancelBtn" text="✕" styleClass="progress-control-btn-danger"
+                    <Button fx:id="globalResumeBtn" text="▶" styleClass="btn-control-modern btn-resume"
+                            visible="false" managed="false" onAction="#handleGlobalResume"/>
+                    <Button fx:id="globalCancelBtn" text="✕" styleClass="btn-control-cancel"
                             onAction="#handleGlobalCancel"/>
                 </HBox>
+                
+                <!-- Hidden labels for controller compatibility -->
+                <Label fx:id="globalProgressEta" text="" visible="false" managed="false"/>
+                <Label fx:id="footerChunksLabel" text="" visible="false" managed="false"/>
             </HBox>
             
-            <!-- Footer bar bình thường -->
-            <HBox styleClass="footer-bar" alignment="CENTER_LEFT">
-                <HBox spacing="8" alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
-                    <Label fx:id="footerStatusLabel" text="" styleClass="footer-text"/>
+            <!-- App Footer - NỀN ĐEN CHỮ TRẮNG như header -->
+            <HBox styleClass="app-footer" alignment="CENTER" 
+                  style="-fx-background-color: #1f2937;">
+                <HBox spacing="8" alignment="CENTER_LEFT">
+                    <Label text="P2P ShareFile" styleClass="footer-brand" 
+                           style="-fx-text-fill: #ffffff; -fx-font-size: 14; -fx-font-weight: bold;"/>
                 </HBox>
-                <HBox spacing="8" alignment="CENTER_RIGHT">
-                    <Label fx:id="footerChunksLabel" text="" styleClass="footer-text-muted"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <HBox spacing="16" alignment="CENTER_RIGHT">
+                    <Label text="🔒 End-to-End Encrypted" styleClass="footer-feature"
+                           style="-fx-text-fill: #ffffff;"/>
+                    <Label text="⚡ Peer-to-Peer" styleClass="footer-feature"
+                           style="-fx-text-fill: #ffffff;"/>
+                    <Label fx:id="footerStatusLabel" text="" styleClass="footer-transfer-count"
+                           style="-fx-text-fill: #ffffff;"/>
+                    <Label text="v2.0" styleClass="footer-version"
+                           style="-fx-text-fill: #ffffff; -fx-background-color: #374151;"/>
                 </HBox>
             </HBox>
         </VBox>
