@@ -75,9 +75,15 @@ public class P2PService {
             System.out.println("🔐 Initializing Security Manager...");
             this.securityManager = new SecurityManager(peerId, displayName);
             
-            // ⭐ BƯỚC 2: Tạo PeerInfo với public key
+            // ⭐ BƯỚC 2: Tạo random port cho peer TCP (nếu tcpPort = 0 hoặc trùng với service port)
+            int actualPeerPort = tcpPort;
+            if (tcpPort == 0 || tcpPort == 9999) {
+                actualPeerPort = generateRandomPeerPort();
+            }
+            
+            // ⭐ BƯỚC 3: Tạo PeerInfo với public key và random port
             String publicKeyEncoded = securityManager.getPublicKeyEncoded();
-            this.localPeer = new PeerInfo(peerId, getLocalIPAddress(), tcpPort, displayName, publicKeyEncoded);
+            this.localPeer = new PeerInfo(peerId, getLocalIPAddress(), actualPeerPort, displayName, publicKeyEncoded);
             
             System.out.println("✓ Đã tạo Peer cục bộ với khóa công khai");
             System.out.println("  → Peer ID: " + peerId);
@@ -253,14 +259,11 @@ public class P2PService {
         System.out.println("   Security: TLS + ECDSA Signatures");
 
         try {
-            // ⭐ BƯỚC 1: Start ChunkedFileTransferService
+            // ⭐ BƯỚC 1: Start ChunkedFileTransferService (service port cố định 9999)
             System.out.println("\n[1/6] Khởi động ChunkedFileTransferService (TLS)...");
             chunkedTransferService.start();
-            
-            // Port được set bởi ChunkedFileTransferService
-            int actualPort = chunkedTransferService.getPort();
-            localPeer.setPort(actualPort);  // Cập nhật port cho localPeer
-            System.out.println("✓ ChunkedFileTransferService started on port: " + actualPort);
+            System.out.println("✓ ChunkedFileTransferService started on service port: " + chunkedTransferService.getPort());
+            System.out.println("   Peer TCP port (for discovery): " + localPeer.getPort());
 
             // ⭐ BƯỚC 2: Start FileSearchService
             System.out.println("\n[2/6] Khởi động FileSearchService (TLS)...");
@@ -974,6 +977,74 @@ public class P2PService {
             } catch (Exception e) {
                 System.err.println("Lỗi trong listener: " + e.getMessage());
             }
+        }
+    }
+
+    // =====================================================
+    // RANDOM PORT GENERATION
+    // =====================================================
+    
+    /**
+     * Danh sách các port đã được sử dụng bởi các service
+     * Không được chọn những port này cho peer TCP
+     */
+    private static final Set<Integer> RESERVED_PORTS = Set.of(
+        8888,   // Discovery multicast port
+        8889,   // Backup discovery port  
+        8890,   // Alternative discovery
+        8891,   // FileSearchService
+        8887,   // PINCodeService
+        9999,   // ChunkedFileTransferService
+        9998,   // Alternative transfer port
+        8892,   // PreviewService
+        443,    // HTTPS (Relay)
+        80,     // HTTP
+        22,     // SSH
+        3389    // RDP
+    );
+    
+    /**
+     * Tạo port ngẫu nhiên cho peer TCP connection
+     * Port nằm trong khoảng 10000-60000 và không trùng với các service port
+     * 
+     * @return Random available port
+     */
+    private int generateRandomPeerPort() {
+        java.util.Random random = new java.util.Random();
+        int minPort = 10000;
+        int maxPort = 60000;
+        int maxAttempts = 100;
+        
+        for (int attempt = 0; attempt < maxAttempts; attempt++) {
+            int port = minPort + random.nextInt(maxPort - minPort + 1);
+            
+            // Kiểm tra không trùng với reserved ports
+            if (RESERVED_PORTS.contains(port)) {
+                continue;
+            }
+            
+            // Kiểm tra port có available không
+            if (isPortAvailable(port)) {
+                System.out.println("✓ Generated random peer TCP port: " + port);
+                return port;
+            }
+        }
+        
+        // Fallback: trả về port random trong khoảng
+        int fallbackPort = minPort + random.nextInt(maxPort - minPort + 1);
+        System.out.println("⚠ Using fallback random port: " + fallbackPort);
+        return fallbackPort;
+    }
+    
+    /**
+     * Kiểm tra port có available không
+     */
+    private boolean isPortAvailable(int port) {
+        try (java.net.ServerSocket socket = new java.net.ServerSocket(port)) {
+            socket.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 }
